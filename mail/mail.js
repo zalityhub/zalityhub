@@ -55,9 +55,9 @@ function getEmails(config) {
             // save(emails);
 
             emails.forEach((email) => {
-              // fs.writeFileSync(`${email.seq}.txt`, email.body.toString());
+              fs.writeFileSync(`${email.seq}.txt`, email.body.toString());
               const parsed = imap.parse(email);
-              // fs.writeFileSync(`${email.seq}.json`, stringify(parsed, null, 4));
+              fs.writeFileSync(`${email.seq}.json`, stringify(parsed, null, 4));
             });
           });
         });
@@ -79,8 +79,8 @@ function send(config, text) {
   smtp.connect(config);
 
   const options = {
-    from: smtp.auth.user,
-    to: 'hbray@me.com',
+    from: smtp.options.auth.user,
+    to: 'chat@zality.com',
     subject: 'Sending Email using Node.js'
   };
 
@@ -89,4 +89,4 @@ function send(config, text) {
   });
 }
 
-// send(Credentials.smtp, 'whatever');
+// send(Credentials.smtp, 'good evening');
