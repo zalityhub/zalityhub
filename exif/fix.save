@@ -1,0 +1,407 @@
+const fs = require('fs');
+const path = require('path');
+const process = require("process");
+const qjobs = require('qjobs');
+
+const stringify = require('json-stringify-safe');
+const ExifImage = require('exif').ExifImage;
+const nxmesh = require('nxmesh');
+
+const Config = nx.getEnv(['google'], true);
+const googleMapsClient = require('@google/maps').createClient({
+  key: ''
+});
+
+
+function IsWeirdPrefix(str) {
+  if (str.length <= 2)
+    return false;
+  if (str.allDigits())
+    return false;
+  for (let c of str.toString()) {
+    if (!((c >= 'A' && c <= 'Z') || c === '+' || (c >= '0' && c <= '9')))
+      return false;
+  }
+  return true;
+}
+
+
+function ConvertLatLng(ll, ref) {
+  if (!IsArray(ll, true))
+    throw new Error('latlng must be an array');
+
+  let r = 0.0;
+  let d = 1.0;
+
+  for (let i = 0, ilen = ll.length; i < ilen; ++i) {
+    r = r + (parseFloat(ll[i]) / d);
+    d = d * 60.0;
+  }
+
+  if (ref.toLowerCase() === 'w')
+    r = 0.0 - r;
+  if (ref.toLowerCase() === 's')
+    r = 0.0 - r;
+  return r;
+}
+
+
+function JpgReverseGeocode(opts, cb) {
+
+  function doReverse(gps, cb) {
+    if (IsNull(gps) || IsNull(gps.lat) || IsNull(gps.lng)) {
+      const err = new Error('{lat: latitude, lng: longitude} is required');
+      if (cb)
+        return cb(err);
+      return LogError('Error: ' + err.message);
+    }
+
+    try {
+      googleMapsClient.reverseGeocode({
+        latlng: `${gps.lat}, ${gps.lng}`
+      }, function (err, response) {
+        if (err) {
+          if (cb)
+            return cb(err);
+          return LogError('Error: ' + err.message);
+        }
+        if (cb)
+          cb(null, response);
+      });
+    } catch (err) {
+      if (cb)
+        return cb(err);
+      return LogError('Error: ' + err.message);
+    }
+  }
+
+  try {
+    if (!IsNull(opts.file)) {
+      new ExifImage({image: opts.file}, function (err, exif, file) {
+        if (err) {
+          if (err.message.indexOf(opts.file) < 0)
+            err.message = `${err.message}: ${opts.file}`;
+          if (cb)
+            return cb(err);
+          return LogError('Error: ' + err.message);
+        }
+        JpgReverseGeocode({exif: exif}, function (err, loc) {
+          if (err) {
+            err.message = `${err.message} in ${opts.file}`;
+            if (cb)
+              return cb(err);
+            return LogError('Error: ' + err.message);
+          }
+          return cb(null, loc);
+        });
+      });
+    } else if (!IsNull(opts.gps)) {
+      doReverse(opts.gps, cb);
+    } else if (!IsNull(opts.exif)) {
+      const exif = opts.exif;
+      const gps = {};     // use file gps
+      if (IsArray(exif.gps.GPSLatitude))
+        gps.lat = ConvertLatLng(exif.gps.GPSLatitude, exif.gps.GPSLatitudeRef);
+      if (IsArray(exif.gps.GPSLongitude))
+        gps.lng = ConvertLatLng(exif.gps.GPSLongitude, exif.gps.GPSLongitudeRef);
+      if (!IsNull(gps) && !(IsNull(gps.lat) && IsNull(gps.lng)))
+        return JpgReverseGeocode({gps: gps}, cb);
+      const err = new Error(`No gps data`);
+      if (cb)
+        return cb(err);
+      return LogError('Error: ' + err.message);
+    }
+  } catch
+    (err) {
+    if (cb)
+      return cb(err);
+    return LogError('Error: ' + err.message);
+  }
+}
+
+
+function ProcessJpgs(targets) {
+
+  if (!IsArray(targets))
+    targets = [targets];    // make it so
+
+  for (let i = 0, ilen = targets.length; i < ilen; ++i) {
+    const target = targets[i];
+    const stat = statSafe(target);
+    if (!IsNull(stat.isDirectory) && stat.isDirectory()) {
+      const stats = FsGet(target, true);
+      for (let i = 0, ilen = stats.length; i < ilen; ++i)
+        ProcessJpgs(stats[i]);
+    } else {
+      FileQueue.add(ExifJob, target.fpath);
+    }
+  }
+}
+
+
+function GeoCode(f) {
+// Geocode an address.
+  googleMapsClient.geocode({
+    // address: '1600 Amphitheatre Parkway, Mountain View, CA'
+    LatLng: '-33.867, 151.195'
+  }, function (err, response) {
+    if (!err) {
+      console.log(stringify(response.json.results, null, 2));
+    }
+  });
+}
+
+
+function ProcessDups(targets) {
+
+  function dirHandler(dir) {
+    const stats = FsGet(dir, true);
+    for (let i = 0, ilen = stats.length; i < ilen; ++i) {
+      const stat = stats[i];
+      if (stat.isFile()) {
+        const fname = path.basename(stat.fpath);
+        if (fname.length > 0 && isCharDigit(fname[0])) {
+          if (!IsArray(files[fname]))
+            files[fname] = [];   // new file
+          files[fname].push(stat.fpath);   // add this one
+        }
+      }
+    }
+  }
+
+// 3034860064 871559 pictures/CameraRoll/041218_115837.jpg
+  function sumHandler(file) {
+    const lines = fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean);
+
+    for (let i = 0, ilen = lines.length; i < ilen; ++i) {
+      const line = lines[i];
+      const items = line.split(' ');
+      if (items.length === 3) {
+        const sum = items[0];
+        if (!IsArray(files[sum]))
+          files[sum] = [];   // new file
+        files[sum].push(items[2]);   // add this one
+      }
+    }
+  }
+
+  if (!IsArray(targets))
+    targets = [targets];    // make it so
+
+  let files = {};
+
+  for (let i = 0, ilen = targets.length; i < ilen; ++i) {
+    const target = targets[i];
+    const stat = fs.statSync(target);
+    if (stat.isDirectory())
+      dirHandler(target);
+    else
+      sumHandler(target);
+  }
+
+  files = files.hashToArray();
+  let cnt = 0;
+  for (let i = 0, ilen = files.length; i < ilen; ++i) {
+    const dup = files[i];
+    if (dup.length > 1) {
+      console.log('');
+      for (let j = 0, jlen = dup.length; j < jlen; ++j) {
+        console.log(`${j}: ${fs.realpathSync(dup[j]).toString()}`);
+        ++cnt;
+      }
+    }
+  }
+
+  console.log(`${cnt} dups`);
+}
+
+
+const ExifJob = function (args, next) {
+
+  function processFile(file, cb) {
+    if (path.extname(file) === ".jpg") {
+      JpgReverseGeocode({file: file}, function (err, rsp) {
+        if (err) {
+          if (cb)
+            return cb(err);
+          return LogError('Error: ' + err.message);
+        }
+
+        let locations = rsp.json.results;
+        if (!IsArray(locations))
+          locations = [];
+        for (let i = 0, ilen = locations.length; i < ilen; ++i) {
+          let addr = locations[i].formatted_address;
+          if (addr) {
+            addr = fixupAddress(addr.toString()).toString();
+            locations[i].fixedAddress = addr;
+            locations[i].normalizedAddress = normalizeAddress(addr);
+          }
+        }
+
+        const image = {file: file, locations: locations};
+        if (cb)
+          cb(null, image);
+      });
+    }
+  }
+
+
+  function complete(err, image) {
+    if (err) {
+      if (err.message.indexOf('EMFILE') > 0)
+        return LogError(err.message);
+      return LogError(err.message);
+    }
+    let locations = image.locations;
+    switch (locations.length) {
+      case 0:
+      case 1:
+        break;
+
+      default:
+        locations = locations.slice(locations.length - 2);
+        break;
+    }
+    image.locations = locations;
+    console.log(stringify(image));
+  }
+
+  processFile(args, complete);
+  next();
+}
+
+
+const ExifJob = function (args, next) {
+  function fixupAddress(addr) {
+    addr = addr.toString();
+    let ar = addr.split(' ');
+    if (IsWeirdPrefix(ar[0])) {
+      ar.splice(0, 1);
+      addr = ar.join(' ');
+    }
+    addr = addr.split(',');
+
+    for (let i = 0, ilen = addr.length; i < ilen; ++i) {
+      ar = addr[i].toString().allTrim().toString();
+      if ((ar === 'USA')) {
+        addr.splice(i, 1);    // remove it
+        i = -1;    // restart the loop
+        --ilen;
+      } else {
+        if ((ar.length > 5 && ar[ar.length - 6] === ' ' && ar.slice(ar.length - 5)).toString().allDigits())
+          ar = ar.slice(0, ar.length - 6);    // looks like a zip code
+        addr[i] = ar;
+      }
+    }
+    return addr.join(', ').toString();
+  }
+
+  function normalizeAddress(addr) {
+    addr = addr.toString();
+
+    let seenNonDigit = false;
+    addr = addr.split('');
+
+    for (let i = 0, ilen = addr.length; i < ilen; ++i) {
+      const c = addr[i];
+      const isDigit = ((c >= '0' && c <= '9') || c === '-');
+      if ((!seenNonDigit && isDigit) || c === '#' || c === '&' || c === '\\' || c === '+')
+        addr[i] = '';
+      if (c === ',' || c === '.')
+        addr[i] = '_';
+      seenNonDigit = (seenNonDigit || (!isDigit));
+    }
+    addr = addr.join('').toString().allTrim().split(' ');
+    addr = addr.join('_').toString().allTrim().toString().replaceAll('__', '_').toString();
+    return addr.replaceAll('__', '_').toString();
+  }
+
+
+  function processFile(file, cb) {
+    if (path.extname(file) === ".jpg") {
+      JpgReverseGeocode({file: file}, function (err, rsp) {
+        if (err) {
+          if (cb)
+            return cb(err);
+          return LogError('Error: ' + err.message);
+        }
+
+        let locations = rsp.json.results;
+        if (!IsArray(locations))
+          locations = [];
+        for (let i = 0, ilen = locations.length; i < ilen; ++i) {
+          let addr = locations[i].formatted_address;
+          if (addr) {
+            addr = fixupAddress(addr.toString()).toString();
+            locations[i].fixedAddress = addr;
+            locations[i].normalizedAddress = normalizeAddress(addr);
+          }
+        }
+
+        const image = {file: file, locations: locations};
+        if (cb)
+          cb(null, image);
+      });
+    }
+  }
+
+
+  function complete(err, image) {
+    if (err) {
+      if (err.message.indexOf('EMFILE') > 0)
+        return LogError(err.message);
+      return LogError(err.message);
+    }
+    let locations = image.locations;
+    switch (locations.length) {
+      case 0:
+      case 1:
+        break;
+
+      default:
+        locations = locations.slice(locations.length - 2);
+        break;
+    }
+    image.locations = locations;
+    console.log(stringify(image));
+  }
+
+  processFile(args, complete);
+  next();
+}
+
+
+const FileQueue = new qjobs({maxConcurrency: 2});
+
+FileQueue.on('start', function () {
+  // console.log('Starting ...');
+});
+
+FileQueue.on('end', function () {
+  console.log('... All jobs done');
+});
+
+FileQueue.on('jobStart', function (args) {
+  // console.log('jobStart', args);
+});
+
+FileQueue.on('jobEnd', function (args) {
+  // console.log('jobend', args);
+});
+
+FileQueue.on('pause', function (since) {
+  console.log('in pause since ' + since + ' milliseconds');
+});
+
+FileQueue.on('unpause', function () {
+  console.log('pause end, continu ..');
+});
+
+const argv = process.argv.slice(2);    // arg list
+
+ProcessJpgs(argv);
+
+FileQueue.run();
+
+// ProcessDups(argv);

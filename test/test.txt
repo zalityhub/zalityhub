@@ -1,0 +1,29 @@
+SERVER ATM-DUMMY
+  PROCESSTYPE OSS
+  ARGLIST -Dcompaq,fjfjf
+  AUTORESTART 3
+  ENV TANDEM_PATHMON_NAME=$D1PM
+  ENV
+    CLASSPATH=/usr/...
+    jobs/ATM_Dummy
+    a/del1A
+    s-beanutils.jar
+  ENV
+    _RLD_LIB_PATH=/T127
+  HIGHPIN OFF
+  HOMETERM \VADA2...
+SERVER EMAILEX
+  PROCESSTYPE OSS
+  ARGLIST -Dcompaq,fjfjf
+  AUTORESTART 3
+  ENV TANDEM_PATHMON_NAME=$D1PM
+  ENV
+    CLASSPATH=/usr/...
+    xCLASSPATH=/usr/... and this
+    jobs/ATM_Dummy
+    a/del1A
+    s-beanutils.jar
+  ENV
+    _RLD_LIB_PATH=/T127
+  HIGHPIN OFF
+  HOMETERM \VADA2...

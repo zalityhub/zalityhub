@@ -1,0 +1,247 @@
+const fs = require('fs');
+const stringify = require('json-stringify-safe');
+const http = require('http');
+const pUrl = require('url');
+const nxmesh = require('nxmesh');
+
+
+const CallControl = {};
+CallControl.activeCalls = {};
+CallControl.apiKey = 'KEY0185D52CEEF26CBA888211D708D87BE3_mVine39rFf32gIzvOr1uz1';
+CallControl.dialId = '2084060835327509724';
+CallControl.myNbr = '8084375810';
+CallControl.telnyx = require('telnyx')(CallControl.apiKey);
+
+
+function HookEvent(ev) {
+  const call = ev.data;
+
+  console.log(stringify(call, null, 2) + '\n');
+  switch (call.event_type) {
+    default:
+      break;
+
+    case 'call.initiated':
+      break;
+
+    case 'call.answered':
+      break;
+
+    case 'call.playback.started':
+      break;
+
+    case 'call.playback.ended':
+      break;
+
+    case 'call.hangup':
+      if (IsObject(CallControl.activeCalls[call.payload.call_leg_id]))
+        delete CallControl.activeCalls[call.payload.call_leg_id];
+      break;
+  }
+}
+
+
+const server = http.createServer((req, res) => {
+  function hook(req, res, url) {
+    if (req.method === 'POST') {
+      let body = [];
+      req.on('data', (chunk) => {
+        body.push(chunk);
+      }).on('end', () => {
+        body = JSON.parse(Buffer.concat(body).toString());
+        HookEvent(body);
+      });
+    }
+    res.end('');
+  }
+
+  function logBody(req, res, url) {
+    if (req.method === 'POST') {
+      let body = [];
+      req.on('data', (chunk) => {
+        body.push(chunk);
+      }).on('end', () => {
+        body = JSON.parse(Buffer.concat(body).toString());
+        console.log(stringify(body, null, 2) + '\n');
+      });
+    }
+    res.end('');
+  }
+
+  function LogRequest(req, res, url) {
+    if (req.method === 'POST')
+      return logBody(req, res, url);
+
+    console.log(stringify(req, null, 2) + '\n');
+    res.end('');
+  }
+
+  function getTexML(req, res, url) {
+    if (!url.query.file)
+      return res.end('missing file');
+
+    try {
+      const ml = fs.readFileSync(url.query.file, 'utf8');
+      console.log(stringify({file: url.query.file, ml: ml}, null, 2));
+      return res.end(ml.toString());
+    } catch (e) {
+      console.log(e.toString());
+      return res.end('error');
+    }
+  }
+
+  function dial(req, res, url) {
+    if (!url.query.nbr)
+      return res.end('missing number');
+
+    const dial = {};
+    dial.connection_id = CallControl.dialId;
+    dial.to = '+1' + url.query.nbr;
+    dial.from = '+1' + CallControl.myNbr;
+    if (url.query.play)
+      dial.audio_url = 'https://hbray.me/wav?file=' + url.query.play;
+
+    CallControl.telnyx.calls.create(dial).then(function (response) {
+      const call = response.data;
+      CallControl.activeCalls[call.call_leg_id] = call;
+      res.end('Dialing:' + url.query.nbr);
+    });
+  }
+
+  function getAudio(req, res, url, type) {
+    if (!url.query.file)
+      return res.end('missing file');
+
+    try {
+      fs.readFile(url.query.file, function (err, audio) {
+        if (err) {
+          console.log(err.toString());
+          return res.end('error');
+        }
+
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.writeHead(200, {
+          'Content-type': 'audio/' + type
+        });
+        res.write(audio);
+        res.end();
+      });
+    } catch (e) {
+      console.log(e.toString());
+      return res.end('error');
+    }
+  }
+
+  function sms(req, res, url) {
+    if (!url.query)
+      return res.end('missing number and text');
+
+    if (!url.query.nbr)
+      return res.end('missing number');
+
+    if (req.method === 'POST') {
+      let body = [];
+      req.on('data', (chunk) => {
+        body.push(chunk);
+      }).on('end', () => {
+        const text = NullToString(Buffer.concat(body).toString(), '');
+        console.log('text=' + text);
+        const res = DoCmd('sh', ['sms.sh', url.query.nbr, text]);
+        if (res[0] != 0) {
+          console.log(res[2]);
+          return res.end(res[2]);
+        }
+        return res.end('sent:' + text);
+      });
+    }
+
+    if (!url.query.text)
+      return res.end('missing text');
+
+    console.log('text=' + url.query.text);
+    const r = DoCmd('sh', ['sms.sh', url.query.nbr, url.query.text]);
+    if (r[0] != 0) {
+      console.log(r[2]);
+      return res.end(r[2]);
+    }
+    res.end('sent:' + url.query.text);
+  }
+
+  function lookup(req, res, url) {
+    if (!url.query)
+      return res.end('missing number');
+
+    if (!url.query.nbr)
+      return res.end('missing number');
+
+    const r = DoCmd('sh', ['lookup.sh', url.query.nbr]);
+    if (r[0] != 0) {
+      console.log(r[2]);
+      return res.end(r[2]);
+    }
+
+    try {
+      const q = JSON.parse(CloneObj(res[1]));
+      let text = q.data.phone_number + ':';
+      text += '\nCountry:           ' + q.data.country_code;
+      text += '\nType:              ' + q.data.carrier.type;
+      text += '\nCarrier:           ' + q.data.carrier.name;
+      text += '\nName:              ' + q.data.caller_name.caller_name;
+      text += '\nCity:              ' + q.data.portability.city;
+      text += '\nState:             ' + q.data.portability.state;
+      return res.end(text);
+    } catch (e) {
+      console.log(e.toString());
+      return res.end('error');
+    }
+  }
+
+
+  try {
+    const url = pUrl.parse(req.url, true);
+    switch (url.pathname) {
+      default:
+        LogRequest(req, res, url);
+        break;
+
+      case '/hook':
+        hook(req, res, url);
+        break;
+
+      case '/app':
+        logBody(req, res, url);
+        break;
+
+      case '/texml':
+        getTexML(req, res, url);
+        break;
+
+      case '/mp3':
+        getAudio(req, res, url, 'mpeg');
+        break;
+
+      case '/wav':
+        getAudio(req, res, url, 'wave');
+        break;
+
+      case '/dial':
+        dial(req, res, url);
+        break;
+
+      case '/sms':
+        sms(req, res, url);
+        break;
+
+      case '/lookup':
+        lookup(req, res, url);
+        break;
+    }
+  } catch (e) {
+    console.log(e.toString());
+    return res.end('error');
+  }
+});
+
+server.listen(3000, 'localhost', () => {
+  console.log('Listening for request');
+});

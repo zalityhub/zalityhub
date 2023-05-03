@@ -1,0 +1,9 @@
+o require the bag to get items
+o list only the bag as things you have
+o need to allow actions against things in bag
+o allow to look at bag: list contents of bag
+
+o fix action list and bind to eightball
+o add game tips and bind to eightball
+o build a drop command 
+o need an if command to check inventory, etc

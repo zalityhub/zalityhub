@@ -1,0 +1,376 @@
+2023-01-26 14:20:16.886Z: Listening on http://localhost:3000
+2023-01-26 14:20:33.652Z: dial begin: {
+  "connection_id": "2086382349288736608",
+  "to": "+17274091000",
+  "from": "+18084375810"
+}
+
+2023-01-26 14:20:34.194Z: dial end: {
+  "type": "dial",
+  "dialer": {
+    "nbr": 0,
+    "connection_id": "2086382349288736608",
+    "from": "8084375810"
+  },
+  "opts": {
+    "channel": "0",
+    "to": "7274091000"
+  },
+  "state": "dialing",
+  "callId": "988b6ef2-9d84-11ed-b9bf-02420a0de168"
+}
+
+2023-01-26 14:20:34.195Z: added callId: 988b6ef2-9d84-11ed-b9bf-02420a0de168
+
+2023-01-26 14:20:36.383Z: call.initiated
+{
+  "event_type": "call.initiated",
+  "id": "e0d4ab45-b979-489e-ac3b-dd3c48980aaa",
+  "occurred_at": "2023-01-26T14:20:33.999139Z",
+  "payload": {
+    "call_control_id": "v3:Q-O-trdvQMyuztVzbXEUrrXsj0B49acYrGVdKZ2knk6MiGyrNjfyzA",
+    "call_leg_id": "988b6ef2-9d84-11ed-b9bf-02420a0de168",
+    "call_session_id": "9886d22a-9d84-11ed-9a7c-02420a0de168",
+    "client_state": null,
+    "connection_id": "2086382349288736608",
+    "direction": "outgoing",
+    "from": "+18084375810",
+    "state": "bridging",
+    "to": "+17274091000"
+  },
+  "record_type": "event",
+  "ccmd": {
+    "type": "dial",
+    "dialer": {
+      "nbr": 0,
+      "connection_id": "2086382349288736608",
+      "from": "8084375810"
+    },
+    "opts": {
+      "channel": "0",
+      "to": "7274091000"
+    },
+    "state": "dialing",
+    "callId": "988b6ef2-9d84-11ed-b9bf-02420a0de168"
+  }
+}
+
+2023-01-26 14:20:42.036Z: call.answered
+{
+  "event_type": "call.answered",
+  "id": "54c85e8e-7acf-4a32-90ef-d8a836101479",
+  "occurred_at": "2023-01-26T14:20:39.379138Z",
+  "payload": {
+    "call_control_id": "v3:Q-O-trdvQMyuztVzbXEUrrXsj0B49acYrGVdKZ2knk6MiGyrNjfyzA",
+    "call_leg_id": "988b6ef2-9d84-11ed-b9bf-02420a0de168",
+    "call_session_id": "9886d22a-9d84-11ed-9a7c-02420a0de168",
+    "client_state": null,
+    "connection_id": "2086382349288736608",
+    "from": "+18084375810",
+    "start_time": "2023-01-26T14:20:34.079129Z",
+    "to": "+17274091000"
+  },
+  "record_type": "event",
+  "ccmd": {
+    "type": "dial",
+    "dialer": {
+      "nbr": 0,
+      "connection_id": "2086382349288736608",
+      "from": "8084375810"
+    },
+    "opts": {
+      "channel": "0",
+      "to": "7274091000"
+    },
+    "state": "dialing",
+    "callId": "988b6ef2-9d84-11ed-b9bf-02420a0de168"
+  }
+}
+
+2023-01-26 14:21:08.560Z: dial begin: {
+  "connection_id": "2086383982257112140",
+  "to": "+17274091000",
+  "from": "+18085150110",
+  "audio_url": "https://hbray.me/wav?file=taunt.wav"
+}
+
+2023-01-26 14:21:09.052Z: dial end: {
+  "type": "dial",
+  "dialer": {
+    "nbr": 1,
+    "connection_id": "2086383982257112140",
+    "from": "8085150110"
+  },
+  "opts": {
+    "channel": "1",
+    "to": "7274091000",
+    "audio": "taunt.wav"
+  },
+  "state": "dialing",
+  "callId": "ad54ca2c-9d84-11ed-866d-02420a0daa69"
+}
+
+2023-01-26 14:21:09.053Z: added callId: ad54ca2c-9d84-11ed-866d-02420a0daa69
+
+2023-01-26 14:21:11.290Z: call.initiated
+{
+  "event_type": "call.initiated",
+  "id": "7ba0f9ae-7069-441d-aa03-98c0640748e3",
+  "occurred_at": "2023-01-26T14:21:08.830704Z",
+  "payload": {
+    "call_control_id": "v3:XqWcK6xIsd_GV1YH9XU6V34y-iGYL2iStOyiJHnPpErCMSrO4RfU1w",
+    "call_leg_id": "ad54ca2c-9d84-11ed-866d-02420a0daa69",
+    "call_session_id": "ad500d66-9d84-11ed-bf0f-02420a0daa69",
+    "client_state": null,
+    "connection_id": "2086383982257112140",
+    "direction": "outgoing",
+    "from": "+18085150110",
+    "state": "bridging",
+    "to": "+17274091000"
+  },
+  "record_type": "event",
+  "ccmd": {
+    "type": "dial",
+    "dialer": {
+      "nbr": 1,
+      "connection_id": "2086383982257112140",
+      "from": "8085150110"
+    },
+    "opts": {
+      "channel": "1",
+      "to": "7274091000",
+      "audio": "taunt.wav"
+    },
+    "state": "dialing",
+    "callId": "ad54ca2c-9d84-11ed-866d-02420a0daa69"
+  }
+}
+
+2023-01-26 14:21:15.774Z: call.playback.started
+{
+  "event_type": "call.playback.started",
+  "id": "f7c89288-2df1-45a4-ac50-1e280b420024",
+  "occurred_at": "2023-01-26T14:21:13.330703Z",
+  "payload": {
+    "call_control_id": "v3:XqWcK6xIsd_GV1YH9XU6V34y-iGYL2iStOyiJHnPpErCMSrO4RfU1w",
+    "call_leg_id": "ad54ca2c-9d84-11ed-866d-02420a0daa69",
+    "call_session_id": "ad500d66-9d84-11ed-bf0f-02420a0daa69",
+    "client_state": null,
+    "connection_id": "2086383982257112140",
+    "media_name": null,
+    "media_url": "https://hbray.me/wav?file=taunt.wav",
+    "overlay": false
+  },
+  "record_type": "event",
+  "ccmd": {
+    "type": "dial",
+    "dialer": {
+      "nbr": 1,
+      "connection_id": "2086383982257112140",
+      "from": "8085150110"
+    },
+    "opts": {
+      "channel": "1",
+      "to": "7274091000",
+      "audio": "taunt.wav"
+    },
+    "state": "dialing",
+    "callId": "ad54ca2c-9d84-11ed-866d-02420a0daa69"
+  }
+}
+
+2023-01-26 14:21:15.825Z: call.answered
+{
+  "event_type": "call.answered",
+  "id": "bc5a9f2a-f63d-4cc9-a8a5-6ecca1d2a5c8",
+  "occurred_at": "2023-01-26T14:21:13.310706Z",
+  "payload": {
+    "call_control_id": "v3:XqWcK6xIsd_GV1YH9XU6V34y-iGYL2iStOyiJHnPpErCMSrO4RfU1w",
+    "call_leg_id": "ad54ca2c-9d84-11ed-866d-02420a0daa69",
+    "call_session_id": "ad500d66-9d84-11ed-bf0f-02420a0daa69",
+    "client_state": null,
+    "connection_id": "2086383982257112140",
+    "from": "+18085150110",
+    "start_time": "2023-01-26T14:21:08.930707Z",
+    "to": "+17274091000"
+  },
+  "record_type": "event",
+  "ccmd": {
+    "type": "dial",
+    "dialer": {
+      "nbr": 1,
+      "connection_id": "2086383982257112140",
+      "from": "8085150110"
+    },
+    "opts": {
+      "channel": "1",
+      "to": "7274091000",
+      "audio": "taunt.wav"
+    },
+    "state": "dialing",
+    "callId": "ad54ca2c-9d84-11ed-866d-02420a0daa69"
+  }
+}
+
+2023-01-26 14:21:19.885Z: call.playback.ended
+{
+  "event_type": "call.playback.ended",
+  "id": "a4b20b06-516f-4232-8cfa-a352dad8817a",
+  "occurred_at": "2023-01-26T14:21:17.630705Z",
+  "payload": {
+    "call_control_id": "v3:XqWcK6xIsd_GV1YH9XU6V34y-iGYL2iStOyiJHnPpErCMSrO4RfU1w",
+    "call_leg_id": "ad54ca2c-9d84-11ed-866d-02420a0daa69",
+    "call_session_id": "ad500d66-9d84-11ed-bf0f-02420a0daa69",
+    "client_state": null,
+    "connection_id": "2086383982257112140",
+    "media_name": null,
+    "media_url": "https://hbray.me/wav?file=taunt.wav",
+    "overlay": false,
+    "status": "completed",
+    "status_detail": ""
+  },
+  "record_type": "event",
+  "ccmd": {
+    "type": "dial",
+    "dialer": {
+      "nbr": 1,
+      "connection_id": "2086383982257112140",
+      "from": "8085150110"
+    },
+    "opts": {
+      "channel": "1",
+      "to": "7274091000",
+      "audio": "taunt.wav"
+    },
+    "state": "dialing",
+    "callId": "ad54ca2c-9d84-11ed-866d-02420a0daa69"
+  }
+}
+
+2023-01-26 14:21:19.885Z: Playback ended; Initiate hangup: ad54ca2c-9d84-11ed-866d-02420a0daa69
+
+2023-01-26 14:21:20.102Z: hangup ad54ca2c-9d84-11ed-866d-02420a0daa69 complete
+
+2023-01-26 14:21:20.102Z: {
+  "data": {
+    "result": "ok"
+  }
+}
+
+2023-01-26 14:21:22.212Z: call.hangup
+{
+  "event_type": "call.hangup",
+  "id": "3635fa4c-8cae-4bda-9c17-c62749c6facc",
+  "occurred_at": "2023-01-26T14:21:19.910727Z",
+  "payload": {
+    "call_control_id": "v3:XqWcK6xIsd_GV1YH9XU6V34y-iGYL2iStOyiJHnPpErCMSrO4RfU1w",
+    "call_leg_id": "ad54ca2c-9d84-11ed-866d-02420a0daa69",
+    "call_session_id": "ad500d66-9d84-11ed-bf0f-02420a0daa69",
+    "client_state": null,
+    "connection_id": "2086383982257112140",
+    "end_time": "2023-01-26T14:21:19.910727Z",
+    "from": "+18085150110",
+    "hangup_cause": "normal_clearing",
+    "hangup_source": "caller",
+    "sip_hangup_cause": "unspecified",
+    "start_time": "2023-01-26T14:21:08.930707Z",
+    "to": "+17274091000"
+  },
+  "record_type": "event",
+  "ccmd": {
+    "type": "dial",
+    "dialer": {
+      "nbr": 1,
+      "connection_id": "2086383982257112140",
+      "from": "8085150110"
+    },
+    "opts": {
+      "channel": "1",
+      "to": "7274091000",
+      "audio": "taunt.wav"
+    },
+    "state": "dialing",
+    "callId": "ad54ca2c-9d84-11ed-866d-02420a0daa69"
+  }
+}
+
+2023-01-26 14:21:22.212Z: removing callId: ad54ca2c-9d84-11ed-866d-02420a0daa69
+
+2023-01-26 14:21:23.016Z: call.hangup
+{
+  "event_type": "call.hangup",
+  "id": "8eae3d42-add6-4d87-83ab-91dffd0efe40",
+  "occurred_at": "2023-01-26T14:21:20.739129Z",
+  "payload": {
+    "call_control_id": "v3:Q-O-trdvQMyuztVzbXEUrrXsj0B49acYrGVdKZ2knk6MiGyrNjfyzA",
+    "call_leg_id": "988b6ef2-9d84-11ed-b9bf-02420a0de168",
+    "call_session_id": "9886d22a-9d84-11ed-9a7c-02420a0de168",
+    "client_state": null,
+    "connection_id": "2086382349288736608",
+    "end_time": "2023-01-26T14:21:20.739129Z",
+    "from": "+18084375810",
+    "hangup_cause": "normal_clearing",
+    "hangup_source": "callee",
+    "sip_hangup_cause": "200",
+    "start_time": "2023-01-26T14:20:34.079129Z",
+    "to": "+17274091000"
+  },
+  "record_type": "event",
+  "ccmd": {
+    "type": "dial",
+    "dialer": {
+      "nbr": 0,
+      "connection_id": "2086382349288736608",
+      "from": "8084375810"
+    },
+    "opts": {
+      "channel": "0",
+      "to": "7274091000"
+    },
+    "state": "dialing",
+    "callId": "988b6ef2-9d84-11ed-b9bf-02420a0de168"
+  }
+}
+
+2023-01-26 14:21:23.016Z: removing callId: 988b6ef2-9d84-11ed-b9bf-02420a0de168
+
+2023-01-26 16:17:03.158Z: /
+
+"debug=true"
+
+2023-01-26 16:17:35.086Z: /.env
+
+""
+
+2023-01-27 02:14:26.581Z: /.git/config
+
+""
+
+2023-01-27 02:14:29.241Z: /.git/config
+
+""
+
+2023-01-27 02:14:32.513Z: /.git/config
+
+""
+
+2023-01-27 02:14:35.184Z: /.git/config
+
+""
+
+2023-01-27 03:02:20.404Z: /.git/config
+
+""
+
+2023-01-27 03:02:23.333Z: /.git/config
+
+""
+
+2023-01-27 03:02:26.951Z: /.git/config
+
+""
+
+2023-01-27 03:02:29.658Z: /.git/config
+
+""
+

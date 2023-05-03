@@ -1,0 +1,521 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "iventure",
+      "intents": [
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "next",
+          "slots": [],
+          "samples": [
+            "next"
+          ]
+        },
+        {
+          "name": "back",
+          "slots": [],
+          "samples": [
+            "back"
+          ]
+        },
+        {
+          "name": "chew",
+          "slots": [
+            {
+              "name": "chewItem",
+              "type": "chewItems"
+            }
+          ],
+          "samples": [
+            "chew {chewItem}",
+            "chew"
+          ]
+        },
+        {
+          "name": "get",
+          "slots": [
+            {
+              "name": "getItem",
+              "type": "getItems"
+            }
+          ],
+          "samples": [
+            "get {getItem}",
+            "get"
+          ]
+        },
+        {
+          "name": "pickup",
+          "slots": [
+            {
+              "name": "getItem",
+              "type": "getItems"
+            }
+          ],
+          "samples": [
+            "pickup {getItem}",
+            "pickup"
+          ]
+        },
+        {
+          "name": "go",
+          "slots": [
+            {
+              "name": "goItem",
+              "type": "goItems"
+            }
+          ],
+          "samples": [
+            "go {goItem}",
+            "go"
+          ]
+        },
+        {
+          "name": "open",
+          "slots": [
+            {
+              "name": "openItem",
+              "type": "openItems"
+            }
+          ],
+          "samples": [
+            "open {openItem}",
+            "open"
+          ]
+        },
+        {
+          "name": "help",
+          "slots": [],
+          "samples": [
+            "help"
+          ]
+        },
+        {
+          "name": "hit",
+          "slots": [
+            {
+              "name": "hitItem",
+              "type": "hitItems"
+            }
+          ],
+          "samples": [
+            "hit {hitItem}",
+            "hit"
+          ]
+        },
+        {
+          "name": "look",
+          "slots": [
+            {
+              "name": "lookItem",
+              "type": "lookItems"
+            }
+          ],
+          "samples": [
+            "look {lookItem}",
+            "look"
+          ]
+        },
+        {
+          "name": "peek",
+          "slots": [],
+          "samples": [
+            "peek"
+          ]
+        },
+        {
+          "name": "quit",
+          "slots": [],
+          "samples": [
+            "quit"
+          ]
+        },
+        {
+          "name": "restart",
+          "slots": [],
+          "samples": [
+            "restart"
+          ]
+        },
+        {
+          "name": "talk",
+          "slots": [
+            {
+              "name": "talkItem",
+              "type": "talkItems"
+            }
+          ],
+          "samples": [
+            "talk {talkItem}",
+            "talk"
+          ]
+        },
+        {
+          "name": "touch",
+          "slots": [
+            {
+              "name": "touchItem",
+              "type": "touchItems"
+            }
+          ],
+          "samples": [
+            "touch {touchItem}",
+            "touch"
+          ]
+        },
+        {
+          "name": "use",
+          "slots": [
+            {
+              "name": "useItem",
+              "type": "useItems"
+            }
+          ],
+          "samples": [
+            "use {useItem}",
+            "use"
+          ]
+        },
+        {
+          "name": "what",
+          "slots": [
+            {
+              "name": "whatItem",
+              "type": "whatItems"
+            }
+          ],
+          "samples": [
+            "what {whatItem}",
+            "what"
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "chewItems",
+          "values": [
+            {
+              "name": {
+                "value": "gum"
+              }
+            }
+          ]
+        },
+        {
+          "name": "getItems",
+          "values": [
+            {
+              "name": {
+                "value": "bag"
+              }
+            },
+            {
+              "name": {
+                "value": "chewedgum"
+              }
+            },
+            {
+              "name": {
+                "value": "eightball"
+              }
+            },
+            {
+              "name": {
+                "value": "eraser"
+              }
+            },
+            {
+              "name": {
+                "value": "gum"
+              }
+            },
+            {
+              "name": {
+                "value": "pencil"
+              }
+            },
+            {
+              "name": {
+                "value": "rope"
+              }
+            }
+          ]
+        },
+        {
+          "name": "goItems",
+          "values": [
+            {
+              "name": {
+                "value": "back"
+              }
+            },
+            {
+              "name": {
+                "value": "down"
+              }
+            },
+            {
+              "name": {
+                "value": "east"
+              }
+            },
+            {
+              "name": {
+                "value": "left"
+              }
+            },
+            {
+              "name": {
+                "value": "north"
+              }
+            },
+            {
+              "name": {
+                "value": "right"
+              }
+            },
+            {
+              "name": {
+                "value": "south"
+              }
+            },
+            {
+              "name": {
+                "value": "up"
+              }
+            },
+            {
+              "name": {
+                "value": "west"
+              }
+            }
+          ]
+        },
+        {
+          "name": "hitItems",
+          "values": [
+            {
+              "name": {
+                "value": "curiokeeper"
+              }
+            },
+            {
+              "name": {
+                "value": "attendant"
+              }
+            },
+            {
+              "name": {
+                "value": "keeper"
+              }
+            },
+            {
+              "name": {
+                "value": "shopkeeper"
+              }
+            }
+          ]
+        },
+        {
+          "name": "lookItems",
+          "values": [
+            {
+              "name": {
+                "value": "back"
+              }
+            },
+            {
+              "name": {
+                "value": "bag"
+              }
+            },
+            {
+              "name": {
+                "value": "chewedgum"
+              }
+            },
+            {
+              "name": {
+                "value": "curiokeeper"
+              }
+            },
+            {
+              "name": {
+                "value": "attendant"
+              }
+            },
+            {
+              "name": {
+                "value": "down"
+              }
+            },
+            {
+              "name": {
+                "value": "east"
+              }
+            },
+            {
+              "name": {
+                "value": "eightball"
+              }
+            },
+            {
+              "name": {
+                "value": "eraser"
+              }
+            },
+            {
+              "name": {
+                "value": "gum"
+              }
+            },
+            {
+              "name": {
+                "value": "keeper"
+              }
+            },
+            {
+              "name": {
+                "value": "left"
+              }
+            },
+            {
+              "name": {
+                "value": "north"
+              }
+            },
+            {
+              "name": {
+                "value": "pencil"
+              }
+            },
+            {
+              "name": {
+                "value": "right"
+              }
+            },
+            {
+              "name": {
+                "value": "rope"
+              }
+            },
+            {
+              "name": {
+                "value": "shopkeeper"
+              }
+            },
+            {
+              "name": {
+                "value": "south"
+              }
+            },
+            {
+              "name": {
+                "value": "up"
+              }
+            },
+            {
+              "name": {
+                "value": "west"
+              }
+            }
+          ]
+        },
+        {
+          "name": "talkItems",
+          "values": [
+            {
+              "name": {
+                "value": "curiokeeper"
+              }
+            },
+            {
+              "name": {
+                "value": "attendant"
+              }
+            },
+            {
+              "name": {
+                "value": "keeper"
+              }
+            },
+            {
+              "name": {
+                "value": "shopkeeper"
+              }
+            }
+          ]
+        },
+        {
+          "name": "touchItems",
+          "values": [
+            {
+              "name": {
+                "value": "down"
+              }
+            },
+            {
+              "name": {
+                "value": "eightball"
+              }
+            }
+          ]
+        },
+        {
+          "name": "useItems",
+          "values": [
+            {
+              "name": {
+                "value": "eraser"
+              }
+            }
+          ]
+        },
+        {
+          "name": "openItems",
+          "values": [
+            {
+              "name": {
+                "value": "door"
+              }
+            },
+            {
+              "name": {
+                "value": "trapdoor"
+              }
+            }
+          ]
+        },
+        {
+          "name": "whatItems",
+          "values": [
+            {
+              "name": {
+                "value": "have"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,905 @@
+[
+  {
+    "have": {
+      "what": [
+        "say: You have a bunch of stuff"
+      ]
+    }
+  },
+  {
+    "help": "say: You might want to visit a curio shop",
+    "look": [
+      "say: You are in the center of the ancient city of Tetra. The street has doorways leading into curio shops.",
+      "say: There's a door to your left and a building to your right"
+    ],
+    "left": {
+      "go": [
+        "say: You enter the curio shop.",
+        "set: /game/actors/player/location=/scenes/tetra/scenes/curioshop"
+      ],
+      "look": "say: You see a curio shop."
+    },
+    "right": {
+      "go": "say: The door is locked",
+      "look": "say: You see a museum with yellow crime tape across the doorway"
+    },
+    "up": {
+      "look": "say: Looks like rain"
+    },
+    "down": {
+      "look": "say: You see a bunch of cobbles"
+    }
+  },
+  {
+    "talk": "say: ~./desc says 'Hello'",
+    "hit": "say: ~./desc says ouch",
+    "look": "say: You see ~./desc"
+  },
+  {
+    "peek": "say: not much to see here"
+  },
+  {
+    "get": [
+      "say: Wow! This bag can hold a lot of your stuff!",
+      "set: /game/actors/player/props+=~./~key"
+    ],
+    "look": "say: You see ~./desc"
+  },
+  {
+    "get": [
+      "say: Now you have a ~./desc",
+      "set: /game/actors/player/props+=~./~key"
+    ],
+    "touch": [
+      "say: You shake the magic 8-ball and slowly open your eyes...",
+      "say: Then nothing happens."
+    ],
+    "look": "say: You see ~./desc"
+  },
+  {
+    "look": [
+      "say: You are standing in the Ancient Curio Shop of Tetra.",
+      "say: There's an attendant to your right"
+    ],
+    "back": {
+      "go": [
+        "say: You leave the curio shop.",
+        "set: /game/actors/player/location=/scenes/tetra"
+      ],
+      "look": "say: You see a door leading into a street."
+    },
+    "left": {
+      "look": "say: There's a window looking on to a cobble stone street."
+    },
+    "right": {
+      "look": "say: You see ~/scenes/tetra/scenes/curioshop/actors/curiokeeper/desc"
+    },
+    "down": {
+      "go": "set: /game/actors/player/location=/scenes/tetra/scenes/largehall",
+      "look": "say: You see a trapdoor"
+    }
+  },
+  {
+    "have": {
+      "what": [
+        "say: You have a bunch of stuff"
+      ]
+    }
+  },
+  {
+    "look": [
+      "say: You are in the Large Hall. You can hear the sounds of water running. There is a small rivulet running southward and ends underneath a wall.",
+      "say: You might be able to go south."
+    ],
+    "east": {
+      "go": "say: You can't go east.",
+      "look": "say: You see a rocky wall."
+    },
+    "west": {
+      "go": "say: There isn't a fine-looking door to go through.",
+      "look": "say: You see a fine-looking wall."
+    },
+    "north": {
+      "go": "say: Not getting out that way...",
+      "look": "say: There's a waterfall."
+    },
+    "south": {
+      "go": [
+        "say: You fall a short distance",
+        "set: /game/actors/player/location=/scenes/tetra/scenes/rivuletroom"
+      ],
+      "look": "say: There is a small crack in the wall that you might fit through"
+    },
+    "up": {
+      "go": [
+        "say: You climb up a short ladder and pass through a trap door",
+        "set: /game/actors/player/location=/scenes/tetra/scenes/curioshop"
+      ],
+      "look": "say: The ceiling is low and rocky. There's a ladder leading to a wooden panel inset."
+    },
+    "down": {
+      "go": "say: You'd need a shovel for that.",
+      "look": "say: Your shoes need to be shined."
+    }
+  },
+  {
+    "get": [
+      "say: You now have a ~./desc in your bag.",
+      "say: ",
+      "say: It has a label: Erase Almost Anything! *Some restrictions apply.",
+      "say: Not responsible for lost or damaged objects. Use at your own risk. Do not remove this label.",
+      "set: /game/actors/player/props+=~./~key",
+      "set: ~./desc=A magic pink eraser"
+    ],
+    "use": "say: Nothing happens.",
+    "look": "say: There's a rather ordinary looking pink eraser."
+  },
+  {
+    "get": [
+      "say: You can't write with it, but you can't bring yourself to throw it out.",
+      "set: /game/actors/player/props+=~./~key"
+    ],
+    "look": "say: Your poor pencil has seen better days."
+  },
+  {
+    "get": [
+      "say: You have a ~./desc",
+      "set: ~./desc=coil of rope. When did you buy rope?",
+      "set: /game/actors/player/props+=~./~key"
+    ],
+    "look": "say: there's a ~./desc"
+  },
+  {
+    "look": "say: A pack of chewing gum. Your favorite flavor!",
+    "get": [
+      "say: Now you have a ~./desc",
+      "set: /game/actors/player/props+=~./~key"
+    ],
+    "chew": [
+      "say: Yum...",
+      "set: ~./visible=false",
+      "set: ~../chewedgum/visible=true"
+    ]
+  },
+  {
+    "get": "say: It's too sticky. You don't want it.",
+    "look": [
+      "say: A piece of chewed gum. It was your favorite flavor!",
+      "say: You contemplate chewing it again, but all the flavor's gone anyway."
+    ]
+  },
+  {
+    "look": "say: You are in the rivulet room. A small rivulet comes from the north, banking off into a huge pool of water.",
+    "east": {
+      "go": "say: There's no way to go east in here.",
+      "look": "say: The walls are slick with moisture."
+    },
+    "west": {
+      "go": [
+        "say: There's a huge pool of water.",
+        "say: You don't know how to swim. And you think you saw something swimming in the pool...  something rather large. Your skin crawls."
+      ],
+      "look": [
+        "say: There's a huge pool of water.",
+        "say: You don't know how to swim. And you think you saw something swimming in the pool...  something rather large. Your skin crawls."
+      ]
+    },
+    "north": {
+      "go": [
+        "say: Slithering...",
+        "set: /game/actors/player/location=/scenes/tetra/scenes/largehall"
+      ],
+      "look": "say: You see a rivulet flowing underneath the wall."
+    },
+    "south": {
+      "go": [
+        "say: The door opens and you fall a long distance",
+        "set: /game/actors/player/location=/scenes/cave/scenes/frontofbuilding"
+      ],
+      "look": [
+        "say: There is a surprisingly large door to the south. It looks thick and heavy and is locked with a huge rusted lock. The water must be causing it to deteriorate.",
+        "say: It's been here a very long time."
+      ]
+    },
+    "up": {
+      "go": "say: You can't be serious; You want to poke your head?",
+      "look": "say: The ceiling is covered in stalactites."
+    },
+    "down": {
+      "go": [
+        "say: You fall down",
+        "say: But you get up again",
+        "say: You're never gonna keep me down...",
+        "say: you fall down",
+        "say: But you get up again",
+        "say: You're never gonna keep me down..."
+      ],
+      "touch": "say: Eeeeewwww... Icky...",
+      "look": "say: The wet ground is a little slippery."
+    }
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=hillinroad"
+    ],
+    "back": [
+      "set: /game/actors/player/location=topofcliff"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=insidebuilding"
+    ],
+    "back": [
+      "set: /game/actors/player/location=frontofbuilding"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=valley"
+    ],
+    "back": [
+      "set: /game/actors/player/location=hillinroad"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=endofroad"
+    ],
+    "back": [
+      "set: /game/actors/player/location=insidebuilding"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=cliff"
+    ],
+    "back": [
+      "set: /game/actors/player/location=valley"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=slitinstreambed"
+    ],
+    "back": [
+      "set: /game/actors/player/location=endofroad"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=outsidegrate"
+    ],
+    "back": [
+      "set: /game/actors/player/location=cliff"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=belowthegrate"
+    ],
+    "back": [
+      "set: /game/actors/player/location=slitinstreambed"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=cobblecrawl"
+    ],
+    "back": [
+      "set: /game/actors/player/location=outsidegrate"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=debrisroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=belowthegrate"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=birdchamber"
+    ],
+    "back": [
+      "set: /game/actors/player/location=cobblecrawl"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=topofsmallpit"
+    ],
+    "back": [
+      "set: /game/actors/player/location=debrisroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=hallofmists"
+    ],
+    "back": [
+      "set: /game/actors/player/location=birdchamber"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=eastbankoffissure"
+    ],
+    "back": [
+      "set: /game/actors/player/location=topofsmallpit"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=nuggetofgoldroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=hallofmists"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=hallofmtking"
+    ],
+    "back": [
+      "set: /game/actors/player/location=eastbankoffissure"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=westendoftwopitroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=nuggetofgoldroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=eastpit"
+    ],
+    "back": [
+      "set: /game/actors/player/location=hallofmtking"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=westpit"
+    ],
+    "back": [
+      "set: /game/actors/player/location=westendoftwopitroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=westbankoffissure"
+    ],
+    "back": [
+      "set: /game/actors/player/location=eastpit"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=nspassageaboveewpassage"
+    ],
+    "back": [
+      "set: /game/actors/player/location=westpit"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=thewestsidechamber"
+    ],
+    "back": [
+      "set: /game/actors/player/location=westbankoffissure"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=y2"
+    ],
+    "back": [
+      "set: /game/actors/player/location=nspassageaboveewpassage"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=windowonpit"
+    ],
+    "back": [
+      "set: /game/actors/player/location=thewestsidechamber"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=dirtypassage"
+    ],
+    "back": [
+      "set: /game/actors/player/location=y2"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=brinkofsmallpit"
+    ],
+    "back": [
+      "set: /game/actors/player/location=windowonpit"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=bottomofpitwithstream"
+    ],
+    "back": [
+      "set: /game/actors/player/location=dirtypassage"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=dustyrockroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=brinkofsmallpit"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=westendofhallofmists"
+    ],
+    "back": [
+      "set: /game/actors/player/location=bottomofpitwithstream"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=brinkofpit"
+    ],
+    "back": [
+      "set: /game/actors/player/location=dustyrockroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=eastendoflonghall"
+    ],
+    "back": [
+      "set: /game/actors/player/location=westendofhallofmists"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=westendoflonghall"
+    ],
+    "back": [
+      "set: /game/actors/player/location=brinkofpit"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=complexjunction"
+    ],
+    "back": [
+      "set: /game/actors/player/location=eastendoflonghall"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=bedquilt"
+    ],
+    "back": [
+      "set: /game/actors/player/location=westendoflonghall"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=swisscheeseroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=complexjunction"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=eastendoftwopitroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=bedquilt"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=slabroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=swisscheeseroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=junctionofthreesecretcanyons"
+    ],
+    "back": [
+      "set: /game/actors/player/location=eastendoftwopitroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=largelowroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=slabroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=secretewcanyonabovetightcanyon"
+    ],
+    "back": [
+      "set: /game/actors/player/location=junctionofthreesecretcanyons"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=narrowcorridor"
+    ],
+    "back": [
+      "set: /game/actors/player/location=largelowroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=steepinclineabovelargeroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=secretewcanyonabovetightcanyon"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=giantroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=narrowcorridor"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=cavernwithwaterfall"
+    ],
+    "back": [
+      "set: /game/actors/player/location=steepinclineabovelargeroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=softroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=giantroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=orientalroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=cavernwithwaterfall"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=mistycavern"
+    ],
+    "back": [
+      "set: /game/actors/player/location=softroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=alcove"
+    ],
+    "back": [
+      "set: /game/actors/player/location=orientalroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=ploverroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=mistycavern"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=darkroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=alcove"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=archedhall"
+    ],
+    "back": [
+      "set: /game/actors/player/location=ploverroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=shellroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=darkroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=anteroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=archedhall"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=wittsend"
+    ],
+    "back": [
+      "set: /game/actors/player/location=shellroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=mirrorcanyon"
+    ],
+    "back": [
+      "set: /game/actors/player/location=anteroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=topofstalactite"
+    ],
+    "back": [
+      "set: /game/actors/player/location=wittsend"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=reservoir"
+    ],
+    "back": [
+      "set: /game/actors/player/location=mirrorcanyon"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=neend"
+    ],
+    "back": [
+      "set: /game/actors/player/location=topofstalactite"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=swend"
+    ],
+    "back": [
+      "set: /game/actors/player/location=reservoir"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=swsideofchasm"
+    ],
+    "back": [
+      "set: /game/actors/player/location=neend"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=slopingcorridor"
+    ],
+    "back": [
+      "set: /game/actors/player/location=swend"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=nesideofchasm"
+    ],
+    "back": [
+      "set: /game/actors/player/location=swsideofchasm"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=corridor"
+    ],
+    "back": [
+      "set: /game/actors/player/location=slopingcorridor"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=forkinpath"
+    ],
+    "back": [
+      "set: /game/actors/player/location=nesideofchasm"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=junctionwithwarmwalls"
+    ],
+    "back": [
+      "set: /game/actors/player/location=corridor"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=breathtakingview"
+    ],
+    "back": [
+      "set: /game/actors/player/location=forkinpath"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=chamberofboulders"
+    ],
+    "back": [
+      "set: /game/actors/player/location=junctionwithwarmwalls"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=limestonepassage"
+    ],
+    "back": [
+      "set: /game/actors/player/location=breathtakingview"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=frontofbarrenroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=chamberofboulders"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=barrenroom"
+    ],
+    "back": [
+      "set: /game/actors/player/location=limestonepassage"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=ledge"
+    ],
+    "back": [
+      "set: /game/actors/player/location=frontofbarrenroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=bottomofreservoir"
+    ],
+    "back": [
+      "set: /game/actors/player/location=barrenroom"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=northofreservoir"
+    ],
+    "back": [
+      "set: /game/actors/player/location=ledge"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=baseofcliff"
+    ],
+    "back": [
+      "set: /game/actors/player/location=bottomofreservoir"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=topofcliff"
+    ],
+    "back": [
+      "set: /game/actors/player/location=northofreservoir"
+    ]
+  },
+  {
+    "look": "say: ~./desc",
+    "next": [
+      "set: /game/actors/player/location=/scenes/tetra"
+    ],
+    "back": [
+      "set: /game/actors/player/location=baseofcliff"
+    ]
+  }
+]

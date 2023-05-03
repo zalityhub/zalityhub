@@ -1,0 +1,51 @@
+{
+  "perms": {
+    "group": {
+      "r": true,
+      "w": true,
+      "x": true
+    },
+    "other": {
+      "r": true,
+      "w": true,
+      "x": true
+    },
+    "owner": {
+      "r": true,
+      "w": true,
+      "x": true
+    },
+    "special": {
+      "setgid": true,
+      "setuid": true,
+      "sticky": true
+    }
+  },
+  "specs": {
+    "blksize": true,
+    "blocks": true,
+    "dev": true,
+    "gid": true,
+    "ino": true,
+    "mode": true,
+    "nlink": true,
+    "rdev": true,
+    "size": true,
+    "uid": true
+  },
+  "times": {
+    "atime": true,
+    "ctime": true,
+    "mtime": true
+  },
+  "type": {
+    "isBlockDevice": true,
+    "isCharacterDevice": true,
+    "isDirectory": true,
+    "isFIFO": true,
+    "isFile": true,
+    "isSocket": true,
+    "isSymbolicLink": true,
+    "mode": true
+  }
+}

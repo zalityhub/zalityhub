@@ -1,0 +1,427 @@
+/**
+ * Created by hbray on 2/25/2016.
+ */
+const util = require('util'),
+	  fs = require('fs'),
+	  stringify = require('json-stringify-safe'),
+	  readline = require('readline'),
+	  nxmesh = require('nxmesh');
+
+
+const Requirement = new Enum({
+	approximate: 2,
+	required: 1,
+	notRequired: 0
+});
+
+
+let Game = null;
+
+function log(text) {
+	if (false) {
+		const f = util.format.apply(this, arguments);
+		console.log(new Date().toISOString().replace('T', ' ') + ': ' + f);
+	} else {
+		if(isObject(text))
+			text = stringify(text);
+		console.log(text);
+	}
+
+	return text;
+}
+
+function fatal(message) {
+	throw new Error(log(message.toString()));
+	process.exit(1);
+}
+
+
+/**
+ * @return {boolean}
+ */
+function isObject(it, isRequired) {
+    if (isNull(isRequired))
+        isRequired = Requirement.notRequired;
+    if (!isNull(it) && it.constructor === Object)
+        return true;
+    if (!isRequired)
+        return false;
+    fatal(stringify(it) + ' must be an Object');
+}
+
+
+/**
+ * @return {boolean}
+ */
+function isArray(it, isRequired) {
+    if (isNull(isRequired))
+        isRequired = Requirement.notRequired;
+    if (it instanceof Array)
+        return true;
+    if (!isRequired)
+        return false;
+    fatal(stringify(it) + ' must be an Array');
+}
+
+
+/**
+ * @return {boolean}
+ */
+function isString(it, isRequired) {
+    if (isNull(isRequired))
+        isRequired = Requirement.notRequired;
+    if (typeof (it) === 'string')
+        return true;
+    if (!isRequired)
+        return false;
+    fatal(stringify(it) + ' must be a String');
+}
+
+
+/**
+ * @return {boolean}
+ */
+function isNull(it, isRequired) {
+	if (isRequired === undefined || isRequired === null)
+        isRequired = Requirement.notRequired;
+    if (it === undefined || it === null) {
+        if (!isRequired)
+            return true;
+        fatal(stringify(it) + ' must not be null');
+    }
+    return false;
+}
+
+function getObjectRef(from, key, isRequired) {
+    if (isNull(required))
+        isRequired = Requirement.notRequired;
+
+    isObject(from, Required);
+    isString(key, Required);
+
+    // prep the key
+    key = key.toString().trim();
+    if (key[0] === '~')
+        key = key.substring(1);
+
+    let fr = from;
+    let keys = [];
+
+    if (key[0] === '/') {         // key has a leading slash
+        keys = key.substring(1).split('/');
+        fr = Game.obj;
+    } else if (key.startsWith('./')) {
+        keys = key.substring(2).split('/');
+    } else if (key.startsWith('../')) {
+        fr = getObjectRef(Game.obj, fr._key, Required);
+        keys = key.substring(3).split('/');
+    } else {
+        keys = key.split('/');
+    }
+
+    let it = null;
+    let node = null;
+    for (let i = 0, al = keys.length; i < al; ++i) {
+        if (isNull(it = fr[keys[i]]))
+            break;
+        if ((i + 1) === al) {
+            node = fr;
+            break;
+        }
+        fr = it;
+    }
+
+    if (isNull(node) && isRequired)
+        fatal('Unable to find ' + key);
+
+    return node;
+}
+
+
+function send(object) {
+	function getRef(self, ref) {
+    	const fch = ref[0];
+	    log(ref);
+		return self;
+	}
+
+	switch (Object.keys(object)[0]) {
+		default:
+			fatal(stringify(object) + ' is not a valid function');
+			break
+		case 'getRef':
+			return getRef(this, object.getRef);
+			break;
+	}
+	fatal('Should never get here');
+}
+
+
+function verifyGame(object) {
+    if (isArray(object)) {
+        const al = object.length;
+        for (let i = 0; i < al; ++i) {
+            verifyGame(object[i]);
+        }
+    } else if (isObject(object)) {
+        // if (isNull(object._parent))
+            // fatal(stringify(object) + ' does not have a parent');
+
+        // if (isNull(object._key))
+            // fatal(stringify(object) + ' does not have a key');
+
+        Object.keys(object).forEach(function (key, index) {
+            verifyGame(object[key]);
+        });
+    }
+}
+
+function applyNameTags(object) {
+    if (!isObject(object))
+        return;
+
+	object.send = send;
+    Object.keys(object).forEach(function (key, index) {
+        const it = object[key];
+        if (isArray(it)) {
+            const al = it.length;
+            for (let i = 0; i < al; ++i) {
+                applyNameTags(it[i]);
+            }
+        } else if (isObject(it)) {
+            it._name = key;
+            it._key = object._key + ((object._key.length>1) ? '/' : '') + key;
+            applyNameTags(it);
+        }
+    });
+}
+
+function loadGame(gameFile, dump) {
+    const game = {};
+
+	function objSend(ref) {
+		return this.obj.send(ref);
+	}
+
+    try {
+        game.file = gameFile;
+        game.src = fs.readFileSync(gameFile).toString();
+        game.obj = JSON.parse(game.src);
+        game.obj._key = '/';
+
+        applyNameTags(game.obj);
+		game.send = objSend;
+
+        game.obj._key = '/';
+        verifyGame(game.obj);
+        if (dump !== undefined && dump)
+            console.log(stringify(game.obj, null, 4));
+
+    } catch (ex) {
+        log(ex.toString());
+        log(gameFile + ' contains invalid game');
+        process.exit(1);
+    }
+
+    return game;
+}
+
+
+let sayBuffer = [];
+
+function say(text) {
+    console.log(text);
+    sayBuffer.push(text);
+    return text;
+}
+
+
+function clone(o) {
+    return JSON.parse(JSON.stringify(o));		// clone...
+}
+
+
+/**
+ * @return {string}
+ */
+function removeArticles(input) {
+    const articles = {
+        "i": true,
+        "a": true,
+        "an": true,
+        "at": true,
+        "do": true,
+        "is": true,
+        "the": true,
+        "to": true,
+        "too": true,
+        "": false		// place holder
+    };
+
+    const iwords = input.toString().trim().split(' ');
+    const owords = [];
+    const al = iwords.length;
+    for (let i = 0; i < al; ++i) {
+        const word = iwords[i];
+        if (!articles[word])
+            owords.push(word);
+    }
+    return owords.join(' ');
+}
+
+
+/**
+ * @return {object}
+ */
+function getPlayerObject() {
+    // return getObject(Game.obj, '/actors/player', Requirment.required);
+	const player = Game.send({"getRef":"/actors/player"});
+    if (isNull(player))
+        fatal('Unable to find ' + 'player');
+	return player;
+
+}
+
+
+function doUserCommand(command) {
+    const location = getPlayerLocationObject();
+
+    const parsed = removeArticles(command);			// remove common english articles: at, the, etc...
+
+    if (command === 'restart') {
+        Game = loadGame('full.json');
+        return;
+    }
+
+    const action = findAction(location, parsed);
+
+    if (isNull(action)) {
+        say("That can't be done here");
+        return;
+    }
+
+    action.parsed = action.command;	// save the parsed command
+    action.command = command;		// replace with original written command
+
+    doAction(action);
+
+    // if its a look; show items in room and players possessions
+    if (action.command === 'look') {
+        showThings(action.from.props, 'You see');
+        // showThings(getPlayerObject().props, 'You have');
+    }
+}
+
+
+const debugLocation = '/';
+
+function doDebugCommand(command) {
+
+    command = command.toString().toLowerCase().trim();
+
+    let it;
+    if (command === '*')
+        it = Game.obj;
+    else
+        it = getObject(Game.obj.actors.player, command);
+
+    if (!isNull(it)) {
+        say(stringify(it, null, 4));
+    } else {
+        say(command + ': not found\n');
+    }
+}
+
+
+function doCommand(command) {
+    command = command.toString().toLowerCase().trim();
+
+    if (command === 'quit')
+        process.exit(0);
+
+    // iterate over multiple commands separated by ;
+    if (command.indexOf(';') >= 0) {
+        const lines = command.toString().trim().split(';');
+        const al = lines.length;
+        for (let i = 0; i < al; ++i)
+            doCommand(lines[i]);
+        return;
+    }
+
+    if (command.length <= 0)
+        return;
+
+    try {
+        if (command.startsWith('.')) {
+            doDebugCommand(command.slice(1));
+        } else {
+            doUserCommand(command.toString());
+        }
+    } catch (ex) {
+        log(ex.toString());
+        log(ex.stack);
+        process.exit(1);
+    }
+}
+
+
+/**
+ * @return {string}
+ */
+function doIventureCommand(command) {
+    sayBuffer = [];
+    doCommand(command);
+    return sayBuffer.join(' ');
+}
+
+
+/****************************************************************************************************
+ Start Here
+ ****************************************************************************************************/
+
+function run() {
+    const stdin = process.stdin;
+    const stdout = process.stdout;
+
+    const rl = readline.createInterface(stdin, stdout);
+
+    Game = loadGame('full.json');
+
+// verify we can find the player...
+    const player = getPlayerObject();
+// and its location
+    const playerLocation = getPlayerLocationObject();
+
+    const al = getActionList(Game.obj, true);
+    //console.log(stringify(al, null, 4));
+
+    if (process.argv.length > 2) {
+        for (let i = 2; i < process.argv.length; ++i) {
+            const command = process.argv[i].toString().trim();
+            if (command.length > 0) {
+                say(command);
+                doCommand(command);
+            }
+        }
+    } else {
+        doCommand('look');
+    }
+
+    rl.on('line', (line) => {
+        line = line.toString().trim().toLowerCase().trim();
+        doCommand(line);
+    });
+}
+
+
+function test() {
+    Game = loadGame('full.json');
+    process.exit(0);
+
+    process.exit(0);
+}
+
+
+run();
+
+module.exports = {run: run, test: test, doCommand: doIventureCommand};

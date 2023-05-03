@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JSON to HTML | Javacodepoint</title>
+</head>
+
+<body onload="convertJsonToHtml(jsonData)">
+<h1>Convert JSON data to simple HTML</h1>
+<button onclick="convertJsonToHtml(jsonData)">Convert JSON to HTML</button>
+<br>
+<br>
+<!-- div to display the json data -->
+<div id="IdText"></div>
+
+<script>
+
+  function convertJsonToHtml(data) {
+
+    let max_depth = 0;
+
+    function cnv_object(o, depth) {
+      const sb = new StringBuilder();
+
+      max_depth = Math.max(max_depth, depth);
+      if (depth)
+        sb.append(`<table class="t${depth}">`);
+
+      const es = Object.entries(o);
+      for (let i = 0; i < es.length; ++i)
+        sb.append(`<tr><td class="t${depth}">${es[i][0]}</td><td class="t${depth}">${cnv_entry(es[i][1], depth + 1)}</td></tr>`);
+
+      if (depth)
+        sb.append(`</table>`);
+      return sb.toString();
+    }
+
+    function cnv_array(a, depth) {
+      const sb = new StringBuilder();
+
+      max_depth = Math.max(max_depth, depth);
+      if (depth)
+        sb.append(`<table class="t${depth}">`);
+
+      for (let i = 0; i < a.length; ++i)
+        sb.append(`<tr><td class="t${depth}">${cnv_entry(a[i], depth + 1)}</td></tr>`);
+
+      if (depth)
+        sb.append(`</table>`);
+      return sb.toString();
+    }
+
+    function cnv_entry(en, depth) {
+      max_depth = Math.max(max_depth, depth);
+      if (en.constructor === Object)
+        return cnv_object(en, depth + 1);
+      if (en instanceof Array)
+        return cnv_array(en, depth + 1);
+      return `${en.toString()}`;
+    }
+
+    /*
+          "log": {
+            "enabled": true,
+            "showdebug": false,
+            "file": "chat.log",
+            "options": {
+              "flags": "a"
+            }
+          },
+          "settings": {
+            "model": [
+              "gpt-3.5-turbo",
+              "davinci",
+              "gpt-3.5-turbo"
+            ],
+    */
+
+    const html = new StringBuilder();
+    const entry = cnv_entry(data, -1);
+
+    html.append(`<style>\n`);
+    for (let i = 0; i <= max_depth; ++i)
+      html.append(`.t${i} {\n` +
+        `    vertical-align: top;\n` +
+        `    border-style: ridge;\n` +
+        `    border-width: medium;\n` +
+        `    }\n`);
+    html.append(`</style>\n<table class="t0">`);
+    html.append(entry.toString());
+    html.append(`</table>`);
+
+    //Append the table header and all records
+    let div = document.getElementById(`IdText`);
+    const inner = html.toString();
+    div.innerHTML = inner;
+  }
+
+</script>
+
+<!--
+      //Get the headers from JSON data
+      let headers = Object.keys(jsonData[0]);
+
+      //Prepare html header
+      let headerRowHTML = '<tr>';
+      for (let i = 0; i < headers.length; ++i)
+        headerRowHTML += '<th>' + headers[i] + '</th>';
+      headerRowHTML += '</tr>';
+
+      //Prepare all the employee records as HTML
+      let allRecordsHTML = '';
+      for (let i = 0; i < jsonData.length; ++i) {
+
+        //Prepare html row
+        allRecordsHTML += '<tr>';
+        for (let j = 0; j < headers.length; ++j) {
+          let header = headers[j];
+          allRecordsHTML += '<td>' + jsonData[i][header] + '</td>';
+        }
+        allRecordsHTML += '</tr>';
+
+      }
+    }
+
+    function cnv_array(a) {
+    }
+
+    const html = new StringBuilder();
+
+    if (typeof data === "object")
+      cnv_object(data);
+    else if (typeof data === "array")
+      cnv_array(data);
+
+
+    //Append the table header and all records
+    let div = document.getElementById('IdText');
+    div.innerHTML = '<table border="1">' + headerRowHTML + allRecordsHTML + '</table>';
+-->
+<script>
+  StringBuilder = function (initial) {
+    this._array = [];
+    this._stringbuilder = true;
+    if (typeof initial === 'string')
+      this.append(initial);
+    else if (typeof initial === 'array')
+      for (let i = 0, ilen = initial.length; i < ilen; ++i)
+        this.append(initial[i]);
+    return this;
+  }
+
+  StringBuilder.prototype = {
+    get length() {
+      return this._array.length;
+    }
+  }
+
+  StringBuilder.prototype = {
+    get array() {
+      return this._array;
+    }
+  }
+
+  StringBuilder.prototype.append = function (text) {
+    if (!text)
+      return;   // nothing
+    this._array.push(text);
+    return this;
+  }
+
+  StringBuilder.prototype.appendLine = function (text) {
+    return this.append(text.toString() + '\n');
+  }
+
+  StringBuilder.prototype.pop = function (n) {
+    return this._array.pop(n);
+  }
+
+  StringBuilder.prototype.slice = function (n) {
+    this._array.slice(n);
+    return this;
+  }
+
+  StringBuilder.prototype.insert = function (index, ...items) {
+    this._array.splice(index, 0, ...items);
+    return this;
+  }
+
+  StringBuilder.prototype.replace = function (index, text) {
+    if (index >= this._array.length)
+      return this.append(index, text);
+    this._array[index] = text;
+    return this;
+  }
+
+  StringBuilder.prototype.sort = function () {
+    this._array.sort();
+    return this;
+  }
+
+  StringBuilder.prototype.toString = function () {
+    return this._array.join('').toString();
+  }
+
+
+  let jsonData = {
+    "log": {
+      "enabled": true,
+      "showdebug": false,
+      "file": "chat.log",
+      "options": {
+        "flags": "a"
+      }
+    },
+    "settings": {
+      "model": [
+        "gpt-3.5-turbo",
+        "davinci",
+        "gpt-3.5-turbo"
+      ],
+      "token_ratio": 1.4,
+      "debug": {
+        "history": {
+          "enabled": true,
+          "file": "debug.log",
+          "options": {
+            "flags": "a"
+          }
+        },
+        "logic": {
+          "enabled": true,
+          "file": "debug.log",
+          "options": {
+            "flags": "a"
+          }
+        },
+        "protocol": {
+          "enabled": true,
+          "file": "debug.log",
+          "options": {
+            "flags": "a"
+          }
+        },
+        "dialog": {
+          "enabled": true,
+          "file": "debug.log",
+          "options": {
+            "flags": "a"
+          }
+        },
+        "context": {
+          "enabled": false,
+          "file": "debug.log",
+          "options": {
+            "flags": "a"
+          }
+        },
+        "usage": {
+          "enabled": false,
+          "file": "debug.log",
+          "options": {
+            "flags": "a"
+          }
+        }
+      },
+      "enabled": {
+        "commands": true,
+        "history": true,
+        "save": {
+          "history": false,
+          "context": false
+        }
+      },
+      "similar": {
+        "method": [
+          "tf-idf"
+        ],
+        "remove_stopwords": false,
+        "minimum_history": 2,
+        "optimize": 0.0,
+        "ratio": 0.5,
+        "history": []
+      }
+    },
+    "models": {
+      "gpt-3.5-turbo": {
+        "config": {
+          "type": "https",
+          "hostname": "api.openai.com",
+          "port": 443,
+          "path": "/v1/chat/completions",
+          "method": "POST",
+          "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        },
+        "dialog": {
+          "user": "user",
+          "system": "assistant",
+          "model": "gpt-3.5-turbo-0301",
+          "temperature": 0,
+          "top_p": 0,
+          "max_tokens": 4000,
+          "frequency_penalty": 0,
+          "presence_penalty": 0,
+          "messages": [],
+          "stop": [
+            "\"\"\""
+          ]
+        }
+      },
+      "davinci": {
+        "config": {
+          "type": "https",
+          "hostname": "api.openai.com",
+          "port": 443,
+          "path": "/v1/completions",
+          "method": "POST",
+          "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        },
+        "dialog": {
+          "user": "user",
+          "system": "assistant",
+          "model": "text-davinci-003",
+          "temperature": 0,
+          "top_p": 0,
+          "max_tokens": 4000,
+          "frequency_penalty": 0,
+          "presence_penalty": 0,
+          "prompt": "",
+          "stop": [
+            "\"\"\""
+          ]
+        }
+      }
+    },
+    "history": []
+  };
+  xjsonData = {
+    "log": {
+      "enabled": true,
+      "showdebug": false,
+      "file": "chat.log",
+      "options": {
+        "flags": "a"
+      }
+    }
+  };
+</script>
+
+</body>
+</html>

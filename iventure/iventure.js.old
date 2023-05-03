@@ -1,0 +1,834 @@
+/**
+ * Created by hbray on 2/25/2016.
+ */
+
+// Module Requirements
+var util = require('util'),
+    fs = require('fs'),
+    path = require('path'),
+    Stack = require('stackjs'),
+    stringify = require('json-stringify-safe'),
+    readline = require('readline'),
+    nxmesh = require('nxmesh');
+
+
+var Required = true;
+var NotRequired = false;
+
+
+function log(text) {
+    if (false) {
+        var f = util.format.apply(this, arguments);
+        console.log(new Date().toISOString().replace('T', ' ') + ': ' + f);
+    } else
+        console.log(text);
+    return text;
+}
+
+function fatal(message) {
+    throw new Error(log(message.toString()));
+    process.exit(1);
+}
+
+
+/**
+ * @return {boolean}
+ */
+function isNull(en, isRequired) {
+    if (isRequired === undefined || isRequired === null)
+        isRequired = false;
+    if (en === undefined || en === null) {
+        if (!isRequired)
+            return true;
+        fatal(stringify(en) + ' must not be null');
+    }
+    return false;
+}
+
+/**
+ * @return {boolean}
+ */
+function isObject(en, isRequired) {
+    if (isNull(isRequired))
+        isRequired = false;
+    if (!isNull(en) && en.constructor === Object)
+        return true;
+    if (!isRequired)
+        return false;
+    fatal(stringify(en) + ' must be an Object');
+}
+
+
+/**
+ * @return {boolean}
+ */
+function isArray(en, isRequired) {
+    if (isNull(isRequired))
+        isRequired = false;
+    if (en instanceof Array)
+        return true;
+    if (!isRequired)
+        return false;
+    fatal(stringify(en) + ' must be an Array');
+}
+
+
+/**
+ * @return {boolean}
+ */
+function isString(en, isRequired) {
+    if (isNull(isRequired))
+        isRequired = false;
+    if (typeof (en) === 'string')
+        return true;
+    if (!isRequired)
+        return false;
+    fatal(stringify(en) + ' must be a String');
+}
+
+
+function verifyGame(object) {
+    if (isArray(object)) {
+        for (var i = 0, al = object.length; i < al; ++i) {
+            verifyGame(object[i]);
+        }
+    } else if (isObject(object)) {
+        if (isNull(object._key))
+            fatal(stringify(object) + ' does not have a key');
+
+        Object.keys(object).forEach(function (key, index) {
+            verifyGame(object[key]);
+        });
+    }
+}
+
+function applyNameTags(object) {
+    if (!isObject(object))
+        return;
+
+    Object.keys(object).forEach(function (key, index) {
+        var en = object[key];
+        if (isArray(en)) {
+            for (var i = 0, al = en.length; i < al; ++i) {
+                applyNameTags(en[i]);
+            }
+        } else if (isObject(en)) {
+            en._parent = isNull(object._key, Required) ? '' : object._key;
+            en._key = object._key + '/' + key;
+            applyNameTags(en);
+        }
+    });
+}
+
+function loadGame(gameFile, dump) {
+    var game = {};
+
+    try {
+        game.file = gameFile;
+        game.src = fs.readFileSync(gameFile).toString();
+        game.obj = JSON.parse(game.src);
+        game.obj._key = '';
+        game.obj._parent = '';
+
+        applyNameTags(game.obj);
+
+        game.obj._key = '/';
+        game.obj._parent = '';
+        verifyGame(game.obj);
+        if (dump !== undefined && dump)
+            console.log(stringify(game.obj, null, 4));
+
+    } catch (ex) {
+        log(ex.toString());
+        log(gameFile + ' contains invalid game');
+        process.exit(1);
+    }
+
+    return game;
+}
+
+
+var sayBuffer = [];
+
+function say(text) {
+    console.log(text);
+    sayBuffer.push(text);
+    return text;
+}
+
+
+function clone(o) {
+    return JSON.parse(JSON.stringify(o));		// clone...
+}
+
+
+function getObjectRef(from, key, isRequired) {
+    if (isNull(required))
+        isRequired = false;
+
+    isObject(from, Required);
+    isString(key, Required);
+
+    // prep the key
+    key = key.toString().trim();
+    if (key[0] === '~')
+        key = key.substring(1);
+
+    var fr = from;
+    var keys = [];
+
+    if (key[0] === '/') {         // key has a leading slash
+        keys = key.substring(1).split('/');
+        fr = Game.obj;
+    } else if (key.startsWith('./')) {
+        keys = key.substring(2).split('/');
+    } else if (key.startsWith('../')) {
+        fr = getObjectRef(Game.obj, fr._key, Required);
+        keys = key.substring(3).split('/');
+    } else {
+        keys = key.split('/');
+    }
+
+    var it = null;
+    var node = null;
+    for (var i = 0, al = keys.length; i < al; ++i) {
+        if (isNull(it = fr[keys[i]]))
+            break;
+        if ((i + 1) === al) {
+            node = fr;
+            break;
+        }
+        fr = it;
+    }
+
+    if (isNull(node) && isRequired)
+        fatal('Unable to find ' + key);
+
+    return node;
+}
+
+
+//
+// Requires:
+//	from: an object
+//	key: slash '/' separated list of keys
+//	isRequired: optional boolean indicating if its a isRequired item
+//				causes a Fatal condition if true and not found
+//
+function getObject(from, key, isRequired) {
+    if (isNull(isRequired))
+        isRequired = false;
+
+    var it = getObjectRef(from, key, isRequired);
+    if (isNull(it)) {
+        if (isRequired)
+            fatal('Unable to find ' + key);
+        return null;		// not found
+    }
+
+    var name = path.basename(key);
+    it = it[name];
+    if (isNull(it) && isRequired)
+        fatal('Unable to find ' + key);
+
+    return it;
+}
+
+
+function setObject(from, lhs, rhs, add) {
+    isObject(from, Required);
+    isString(lhs, Required);
+
+    if (isNull(add))
+        add = false;
+
+    // convert the rhs to a value
+    var value = rhs;
+    if (value === 'true')
+        value = true;
+    else if (value === 'false')
+        value = false;
+    else if (/^\d+$/.test(value))
+        value = JSON.parse(value);
+
+    var it = getObjectRef(from, lhs, Required);
+    var name = path.basename(lhs);
+
+    if (add)
+        it[name] += value;
+    else
+        it[name] = value;
+    return it;
+}
+
+
+function getPlayerObject() {
+    return getObject(Game.obj, '/actors/player', Required);
+}
+
+function getPlayerLocationName() {
+    var en = getPlayerObject();
+    isNull(en.location, Required);
+    return en.location;
+}
+
+function getPlayerLocationObject() {
+    return getObject(Game.obj, getPlayerLocationName(), Required);
+}
+
+function setPlayerLocationName(name) {
+    getPlayerObject().location = name;
+    getPlayerLocationObject();
+}
+
+
+function moveObject(src, dest) {
+// Get parent of source
+    var name = path.basename(src._key);
+    var parent = getObject(Game.obj, src._parent, Required);
+    delete parent[name];		// remove from source
+    dest[name] = src;
+
+    applyNameTags(dest);		// remap props
+}
+
+
+function setPlayerProp(key) {
+    var it = getObject(Game.obj, key, Required);
+    var props = getPlayerObject().props;
+    props = {it};
+    moveObject(key, getPlayerObject()._key);
+}
+
+function addPlayerProp(key) {
+    var it = getObject(Game.obj, key, Required);
+    var props = getPlayerObject().props;
+    var name = path.basename(it._key);
+    if (!isNull(props[name])) {
+        say('You already have a ' + it.ldesc);
+        return;
+    }
+    moveObject(it, props);
+}
+
+function setVisibleObject(object, state) {
+    isObject(object, Required);
+    var curr = object.visible;
+    object.visible = state;
+    return curr;
+}
+
+function isVisible(object) {
+    isNull(object, Required);
+    return isNull(object.visible) ? false : object.visible;
+}
+
+
+//
+// Requires:
+//	from: an object
+//	ref: a command
+//
+// Returns:
+//		A full command for given abbreviation ref
+//		determined by building a list of abbreviations that uniquely refer to commands
+//
+function expandAbbreviation(from, ref) {
+
+    return ref;		// TODO: Fix..
+
+    if (isObject(from)) {
+        var uniq = {};
+        var al = ref.slice(0, l);
+        var l = al.length;
+
+        Object.keys(from).forEach(function (key, index) {
+            var ak = key.slice(0, l);
+            if (isNull(uniq[ak]))
+                uniq[ak] = key;
+            else
+                uniq[ak] = '';
+        });
+        if (!isNull(uniq[al]) && uniq[al] !== '')  // got a hit on abbreviation, return full word
+            ref = uniq[al];
+    }
+
+    return ref;
+}
+
+
+/**
+ * @return {string}
+ */
+function resolveRef(from, text) {
+    var iwords = text.toString().trim().split(' ');
+    var owords = [];
+    for (var w = 0, al = iwords.length; w < al; ++w) {
+        var word = iwords[w];
+
+        if (word[0] === '~') {
+            word = word.substring(1).trim();
+            var en;
+            if (isString(en = getObject(from, word)))
+                owords.push(en);
+            else
+                owords.push(word);
+        } else
+            owords.push(word);
+    }
+    return owords.join(' ');
+}
+
+
+//
+// Requires:
+//	from: an object
+//	TODO: recursive: optional true/false to dig recursively
+//
+// Returns:
+//	A list of command that can be made from this point
+//
+function getActionList(from, recursive) {
+    if (isNull(recursive))
+        recursive = false;
+
+    function addActions(actions, prev) {
+        var al = [];
+        Object.keys(actions).forEach(function (key, index) {
+            if (key[0] !== '~') {
+                var en = actions[key];
+                if (isObject(en))
+                    al = al.concat(addActions(en, key));
+                else {
+                    var words = [];
+                    words.push(key);
+                    if (prev.length > 0)
+                        words.push(prev);
+                    al.push(words.join(':'));
+                }
+            }
+        });
+        return al;
+    }
+
+
+    function iterateObject(from) {
+        var al = [];
+
+        if (!isObject(from))
+            return al;			// nothing...
+
+        Object.keys(from).forEach(function (key, index) {
+            var en = from[key];
+            if (key === 'actions')
+                al = al.concat(addActions(en, path.basename(from._key)));
+            if (isObject(en))
+                al = al.concat(iterateObject(en));
+        });
+
+        return al;
+    }
+
+    return iterateObject(from);
+}
+
+
+//
+// Requires:
+//	from: an object
+//	command: applies to given object: look/go left...
+//
+// Returns: object with: {command: string, from: object, action: string[]}
+//          or if not found, null
+//
+
+function findAction(scene, command) {
+
+    function actionFind(from, command) {
+        isObject(from, Required);
+        isString(command, Required);
+
+        var wordsSeen = {};		// to avoid alias loops
+        var alias = [];
+        var action = null;      // output: the matching action, if any...
+
+        var words = command.toString().trim().split(' ');
+        // try to match words in reverse order: eg: left look
+        for (var i = words.length - 1; i >= 0; --i) {
+            var word = words[i].toString().trim();
+            for (; ;) {
+                action = from[expandAbbreviation(from, word)];
+                if (isNull(action))
+                    return action;      // not found...
+                if (!isString(action) || !action.startsWith("_alias:") || wordsSeen[action] || (alias = action.split(':')).length < 2)
+                    break;			// final answer...
+                wordsSeen[alias[1]] = alias[0];
+                word = alias[1];			// substitute word
+            }
+            from = action;
+        }
+
+        return action;
+    }
+
+    function keyFind(from, command) {
+        var wordsSeen = {};		// to avoid alias loops
+        var alias = [];
+        var action = null;      // output: the matching action, if any...
+
+        var words = command.toString().trim().split(' ');
+
+        var word = words[words.length - 1].toString().trim();
+        for (; ;) {
+            action = from[expandAbbreviation(actions, word)];
+            if (isNull(action))
+                return null;		// not found
+
+            if (!isString(action) || !action.startsWith("_alias:") || wordsSeen[action] || (alias = action.split(':')).length < 2)
+                break;			// final answer...
+            wordsSeen[alias[1]] = alias[0];
+            word = alias[1];			// substitute word
+        }
+        from = action;
+        words.pop();
+        if (isVisible(from) && !isNull(from.actions)) {
+            var cmd = words.join(' ');
+            action = actionFind(from.actions, cmd);
+        }
+
+        return isNull(action) ? null : {command: command, from: from, action: action};
+    }
+
+
+//
+// FindAction starts here
+//
+    var action = null;      // output: the matching action, if any...
+    var fr;
+
+    if (command === '?') 		// request for help
+        command = 'help';
+
+    var actions; // the matching action collection
+    if (!isNull(actions = scene.actions))
+        action = actionFind(actions, command);
+
+// if not found, search for actions in props list
+    if (isNull(action)) {
+        if (isObject(fr = scene.props) && isObject(fr.actions)) {
+            if (!isNull(action = actionFind(fr.actions, command))) {
+                scene = fr;
+            }
+        }
+
+        if (isNull(action) && isObject(fr)) {
+            var en;
+            if (!isNull((en = keyFind(fr, command)))) {
+                scene = en.from;
+                action = en.action;
+            }
+        }
+    }
+
+// if not found, search for actions in actors list
+    if (isNull(action)) {
+        if (isObject(fr = scene.actors) && isObject(fr.actions)) {
+            if (!isNull(action = actionFind(fr.actions, command))) {
+                scene = fr;
+            }
+        }
+
+        if (isNull(action) && isObject(fr)) {
+            var en;
+            if (!isNull((en = keyFind(fr, command)))) {
+                scene = en.from;
+                action = en.action;
+            }
+        }
+    }
+
+// if not found, search for actions in player's props list
+    if (isNull(action)) {
+        if (isObject(fr = getPlayerObject().props) && isObject(fr.actions)) {
+            if (!isNull(action = actionFind(fr.actions, command))) {
+                scene = fr;
+            }
+        }
+
+        if (isNull(action) && isObject(fr)) {
+            var en;
+            if (!isNull((en = keyFind(fr, command)))) {
+                scene = en.from;
+                action = en.action;
+            }
+        }
+    }
+
+
+// if not found, search for actions in player
+    if (isNull(action)) {
+        if (isObject(fr = getPlayerObject().actions)) {
+            if (!isNull(action = actionFind(fr, command))) {
+                scene = fr;
+            }
+        }
+    }
+
+    return isNull(action) ? null : {command: command, from: scene, action: action};
+}
+
+
+//
+// Requires: things: an object
+//           heading: a string heading preceeding displayed things...
+//
+function showThings(things, heading) {
+    if (isNull(things))
+        return;			// nothing to show...
+
+    var seen = false;
+    Object.keys(things).forEach(function (key, index) {
+        var thing = things[key];
+        if (isObject(thing)) {
+            if (isVisible(thing)) {
+                if (!seen) {
+                    say('');
+                    seen = say(heading);
+                }
+                say('  ' + thing.ldesc.toString());
+            }
+        }
+    });
+}
+
+
+//
+// Requires: object with: {command: string, from: object, action: string[]}
+// Built by: FindAction()
+//
+function doAction(action) {
+    var command = action.command;
+    var from = action.from;
+    var action = action.action;
+
+    if (isObject(action))
+        action = action.hashToArray();		// convert hash to an array...
+
+    if (isArray(action)) {
+        for (var i = 0, al = action.length; i < al; ++i)
+            doAction({command: command, from: from, action: action[i]});
+        return;
+    }
+
+    var exp = action.toString().trim().split(':');
+    var lhs = exp[0];
+
+    exp.shift();
+    var rhs = exp.join(':');
+
+    switch (lhs) {
+        case 'say':
+            say(resolveRef(from, rhs));
+            break;
+
+        case 'set':
+            exp = rhs.toString().trim().split('=');
+            lhs = exp[0];
+            rhs = exp[1];
+            var add = lhs.endsWith('+');
+            if (add)
+                lhs = lhs.slice(0, lhs.length - 1);		// remove '+' symbol
+
+            switch (lhs) {
+                case '/game/actors/player/location':
+                    setPlayerLocationName(rhs);
+                    userCommand('look');		// updated scene, take a look around
+                    break;
+                case '/game/actors/player/props':
+                    rhs = resolveRef(from, rhs);
+                    if (add)
+                        addPlayerProp(rhs);
+                    else
+                        setPlayerProp(rhs);
+                    break;
+                default:
+                    if (lhs[0] !== '~') {
+                        say("I don't know what to do about");
+                        say(command);
+                    }
+                    setObject(from, lhs, rhs, add);
+                    break;
+            }
+            break;
+
+        default:
+            doCommand(action.toString());
+            break;
+    }
+}
+
+
+function removeArticles(input) {
+    var articles = {
+        "i": true,
+        "a": true,
+        "an": true,
+        "at": true,
+        "do": true,
+        "is": true,
+        "the": true,
+        "to": true,
+        "too": true,
+        "": false		// place holder
+    };
+
+    var iwords = input.toString().trim().split(' ');
+    var owords = [];
+    for (var i = 0, al = iwords.length; i < al; ++i) {
+        var word = iwords[i];
+        if (!articles[word])
+            owords.push(word);
+    }
+    return owords.join(' ');
+}
+
+
+function userCommand(command) {
+    var location = getPlayerLocationObject();
+
+    var parsed = removeArticles(command);			// remove common english articles: at, the, etc...
+
+    if (command === 'restart') {
+        game = loadGame('game.json');
+        return;
+    }
+
+    var action = findAction(location, parsed);
+
+    if (isNull(action)) {
+        say("That can't be done here");
+        return;
+    }
+
+    action.parsed = action.command;	// save the parsed command
+    action.command = command;		// replace with original written command
+
+    doAction(action);
+
+    // if its a look; show items in room and players possessions
+    if (action.command === 'look') {
+        showThings(action.from.props, 'You see');
+        // showThings(getPlayerObject().props, 'You have');
+    }
+}
+
+
+var debugLocation = '/';
+
+function debugCommand(command) {
+
+    command = command.toString().toLowerCase().trim();
+
+    var en;
+    if (command === '*')
+        en = Game.obj;
+    else
+        en = getObject(Game.obj.actors.player, command);
+
+    if (!isNull(en)) {
+        say(stringify(en, null, 4));
+    } else {
+        say(command + ': not found\n');
+    }
+}
+
+
+function doCommand(command) {
+    command = command.toString().toLowerCase().trim();
+
+    if (command === 'quit')
+        process.exit(0);
+
+    // iterate over multiple commands separated by ;
+    if (command.indexOf(';') >= 0) {
+        var lines = command.toString().trim().split(';');
+        for (var i = 0, al = lines.length; i < al; ++i)
+            doCommand(lines[i]);
+        return;
+    }
+
+    if (command.length <= 0)
+        return;
+
+    try {
+        if (command.startsWith('.')) {
+            debugCommand(command.slice(1));
+        } else {
+            userCommand(command.toString());
+        }
+    } catch (ex) {
+        log(ex.toString());
+        log(ex.stack);
+        process.exit(1);
+    }
+}
+
+
+function doIventureCommand(command) {
+    sayBuffer = [];
+    doCommand(command);
+    return sayBuffer.join(' ');
+}
+
+
+/****************************************************************************************************
+ Start Here
+ ****************************************************************************************************/
+
+function run() {
+    var stdin = process.stdin;
+    var stdout = process.stdout;
+
+    var rl = readline.createInterface(stdin, stdout);
+
+    Game = loadGame('game.json');
+
+// verify we can find the player...
+    var player = getPlayerObject();
+// and location
+    var playerLocation = getPlayerLocationObject();
+
+    var al = getActionList(Game.obj, true);
+    //console.log(stringify(al, null, 4));
+
+    if (process.argv.length > 2) {
+        for (var i = 2; i < process.argv.length; ++i) {
+            var command = process.argv[i].toString().trim();
+            if (command.length > 0) {
+                say(command);
+                doCommand(command);
+            }
+        }
+    } else {
+        doCommand('look');
+    }
+
+    rl.on('line', (line) => {
+        line = line.toString().trim().toLowerCase().trim();
+        doCommand(line);
+    });
+}
+
+
+function test() {
+    // Game = loadGame('game.json', false);
+    game = loadGame('game.json', true);
+    process.exit(0);
+
+    process.exit(0);
+}
+
+
+run();
+
+module.exports = {run: run, test: test, doCommand: doIventureCommand};
