@@ -1,0 +1,11 @@
+# ignore idea project files
+node_modules
+env.json.gpg
+tmp
+.idea
+.env
+*.log
+.DS_Store
+junk
+history.json
+web/views/public
