@@ -1,0 +1,796 @@
+1 2 File-name length. The length in bytes of the file name returned by item 2.
+2 * File name. The fully qualified name of the specified file at the time it was opened.
+3 2 Current file name length. The length in bytes of the file name returned by item 4.
+4 * Current file name. The current fully qualified name of the specified file. This might differ from
+item 2 because the file might have been renamed since it was opened.
+5 2 DEFINE name length. For files opened with a DEFINE, the length in bytes of the DEFINE name;
+for other files, 0.
+6 * DEFINE name. For files opened with a DEFINE, the name of the DEFINE.
+7 2 Last error. The file-system error code resulting from the last file-system operation. If filenum
+identifies an open file, the last error associated with that file number is returned. If filenum is -1,
+the last error for an operation not associated with a file number is returned. See Considerations.
+8 2 Last-error detail. Additional information, if available, for interpreting the error reported by item
+7. This value might be a file-system error code or another kind of value, depending on the
+operation and the primary error.
+9 2 Partition in error. For partitioned files, the number of the partition associated with the error
+reported by item 7.
+10 2 Key in error. For files with alternate keys, the specifier of the key associated with the error
+reported by item 7.
+11 4 Next record pointer. For disk files that are not key-sequenced and not accessed with alternate
+key, the value of the next record pointer.
+This item cannot be used with the 64-bit primary-key election of the FILE_OPEN_ procedure; an
+attempt results in error 581. Superseded by item 201.
+12 4 Current record pointer. For disk files that are not key-sequenced and not accessed with
+alternate key, the value of the current record pointer.
+This item cannot be used with the 64-bit primary-key election of the FILE_OPEN_ procedure; an
+attempt results in error 581. Superseded by item 202.
+13 2 Current key specifier. For structured disk files, the key specifier of the current key.
+14 2 Current key length. For structured disk files, the length in bytes of the current key value.
+This item cannot be used with the 64-bit primary-key election of the FILE_OPEN_ procedure; an
+attempt results in error 581.
+Superseded by item 203; see item 203 for detailed description.
+Table Continued
+Guardian Procedure Calls (F) 443
+Item Code Size
+(Bytes)
+Description
+15 * Current key value. For structured disk files, the current key value. Item 15 is not defined for
+queue files.
+This item cannot be used with the 64-bit primary-key election of the FILE_OPEN_ procedure; an
+attempt results in error 581. Superseded by item 204.
+16 2 Current primary-key length. For structured disk files, the length in bytes of the current primarykey
+value. In H06.28/J06.17 RVUs with specific SPRs and later RVUs, the maximum primarykey
+length for format 2 key-sequenced files is 2048. (For a list of the required H06.28/J06.17
+SPRs, see SPR Requirements for Increased Enscribe Limits for the H06.28/J06.17 Release.)
+For earlier RVUs, the maximum primary-key length is 255, regardless of whether the file is a
+format 1 or format 2 file.
+This item cannot be used with the 64-bit primary-key election of the FILE_OPEN_ procedure; an
+attempt results in error 581. Superseded by item 205.
+17 * Current primary-key value. For structured disk files, the current primary-key value.
+This item cannot be used with the 64-bit primary-key election of the FILE_OPEN_ procedure; an
+attempt results in error 581. Superseded by item 206.
+18 6 Tape volume. For labeled tape files, the volume serial number of the reel currently being
+processed.
+19 2 Highest open-file number. The highest file number of any currently open file.
+20 2 Next open-file number. The next file number of any open file higher than the input filenum
+value; if no higher-numbered open file exists, a value of -1 is returned.
+21 2 Open access mode. The access mode under which the specified file has been opened. Values
+are:
+0 read-write
+1 read only
+2 write only
+3 extend (supported for tape, not disk)
+22 2 Open exclusion mode. The exclusion mode under which the specified file has been opened.
+Values are:
+0 shared
+1 exclusive
+3 protected
+23 2 Open nowait depth. The number of concurrent nowait operations permitted on the specified file,
+as specified when the file was opened.
+24 2 Open sync depth. The sync depth or receive depth under which the specified file has been
+opened. For details, see the FILE_OPEN_ Procedure.
+25 2 Open options. The miscellaneous options under which the specified file has been opened. For
+details, see the FILE_OPEN_ Procedure.
+Table Continued
+Guardian Procedure Calls (F) 444
+Item Code Size
+(Bytes)
+Description
+26 4 Operation information. For particular access methods on some devices, a value associated with
+the last completed I/O operation. The meaning of the value is specific to the access method. For
+SNAX, it is the exception response identification number.
+30 2 Device type. The device type associated with the specified file.
+31 2 Device subtype. The device subtype associated with the specified file.
+32 2 Demountable disk. For disk volumes and disk objects, 1 if the volume is demountable; 0
+otherwise.
+33 2 Audited disk. For disk volumes and disk objects, 1 if the volume can support audited files; 0
+otherwise.
+34 2 Physical record length. For disk volumes and files, the maximum transfer length of the device;
+for processes and $RECEIVE, 132 by convention; for other devices, a configured value that
+generally represents some physical limit. This is always an unsigned value representing a
+number of bytes.
+35 4 Logical device number. For processes, -1; for other files, the number of the device supporting
+the specified file. For partitioned files, the number of the device supporting the specified
+partition is returned.
+36 2 Subdevice number. The number associated with a subdevice and assigned by the device
+subsystem.
+40 2 SQL type. For disk objects:
+0 Unstructured or Enscribe file
+2 SQL table
+4 SQL index
+5 SQL protection view
+7 SQL shorthand view
+11 SQL/MX table or view
+12 SQL/MX index
+41 2 File type. For disk objects other than SQL shorthand views:
+0 unstructured
+1 relative
+2 entry-sequenced
+3 key-sequenced
+42 2 File code. For disk objects other than SQL shorthand views, the application-defined file code.
+43 2 Logical record length. For structured disk objects, the maximum number of bytes in a logical
+record.
+Superseded by item 196; see item 196 for detailed description.
+Table Continued
+Guardian Procedure Calls (F) 445
+Item Code Size
+(Bytes)
+Description
+44 2 Block length. For structured disk objects, the length in bytes of each block of records in the file.
+Superseded by item 197; see item 197 for detailed description.
+45 2 Key offset. For key-sequenced disk files, the number of bytes from the beginning of the record
+to where the primary-key field starts.
+Superseded by item 198; see item 198 for detailed description.
+46 2 Key length. For key-sequenced disk files, the length, in bytes, of the record's primary-key field. In
+H06.28/J06.17 RVUs with specific SPRs and later RVUs, the maximum key length for format 2
+key-sequenced files is 2048. (For a list of the required H06.28/J06.17 SPRs, see SPR
+Requirements for Increased Enscribe Limits for the H06.28/J06.17 Release.) For earlier
+RVUs, the maximum key length is 255, regardless of whether it is a format 1 or format 2 file.
+47 2 Lock key length. For key-sequenced disk files, the generic-lock key length. If this value has
+never been set, the key length of the file (the value of item 46) is returned. For information
+about generic locking, see the Enscribe Programmer's Guide.
+48 2 Queue File. For disk objects, this is nonzero if the object is a queue file; otherwise it is zero.
+50 2 Primary extent size. For disk objects other than SQL shorthand views, the size in pages (2048-
+byte units) of the first extent. A returned value of -1 means that the extent size cannot fit into
+this unsigned two-byte attribute. Item 199 must be used to get the correct value. Superseded
+by item 199.
+51 2 Secondary extent size. For disk objects other than SQL shorthand views, the size in pages
+(2048-byte units) of extents after the first extent. A returned value of -1 means that the extent
+size cannot fit into this unsigned two-byte attribute. Item 200 must be used to get the correct
+value. Superseded by item 200.
+52 2 Maximum extents. For disk objects other than SQL shorthand views, the maximum number of
+extents the object is allowed to have.
+53 2 Allocated extents. For disk objects other than SQL shorthand views, the number of extents
+currently allocated for the file.
+54 8 Creation time. For disk objects other than SQL shorthand views, the Julian GMT timestamp of
+the file's creation.
+56 8 Last open time. For disk objects other than SQL shorthand views, the Julian GMT timestamp of
+the last time the file was opened.
+57 8 Expiration time. For disk objects other than SQL shorthand views, the Julian GMT timestamp
+giving the time before which the file cannot be purged. If this attribute has not been set, the
+returned field is zero-filled.
+58 2 File owner. For disk objects, the user ID number that identifies the owner of the file.
+59 2 Safeguard security. For disk objects, 1 if the file is under the protection of the Safeguard
+security system; 0 otherwise. This code is equivalent to bit 14 of code 169.
+60 2 Progid security. For disk objects, 1 if a process using the file as its program file is to use the file
+owner's user ID as the process access ID; 0 otherwise.
+61 2 Clear on purge. For disk objects, 1 if the area of disk occupied by the file should be erased
+(overwritten with zeros) when the file is purged; 0 otherwise.
+Table Continued
+Guardian Procedure Calls (F) 446
+Item Code Size
+(Bytes)
+Description
+62 4 Operating system security string. For disk objects, an array of four one-byte values specifying
+(from left to right) who can read, write, execute, and purge the file. Each byte contains one of
+these values:
+0 any local ID
+1 member of owner’s group (local)
+2 owner (local)
+4 any network user (local or remote)
+5 member of owner’s community
+6 local or remote user having same ID as owner
+7 local super ID only
+63 2 Licensed file. For disk files, 1 if the file is licensed to run in privileged mode; 0 otherwise.
+65 2 Odd unstructured file. For unstructured files, 1 if I/O transfers occur with the exact byte counts
+specified; 0 if transfers are rounded up to an even-byte boundary.
+66 2 Audited file. For disk objects other than SQL shorthand views, 1 if the object is audited by the
+Transaction Management Facility (TMF) subsystem; 0 otherwise.
+67 2 Audit compression. For disk objects other than SQL shorthand views, 1 if audit data for this file
+is to be compressed; 0 otherwise.
+68 2 Data compression. For key-sequenced disk objects, 1 if the entries in data blocks are to be
+compressed; 0 otherwise.
+69 2 Index compression. For key-sequenced disk objects, 1 if the entries in index blocks are to be
+compressed; 0 otherwise.
+70 2 Refresh EOF. For disk objects other than SQL shorthand views, 1 if a change to the end-of-file
+value is to cause the file label to be written immediately to disk; 0 otherwise.
+71 2 Create options. For disk objects, the miscellaneous attributes of the file in the form specified in
+the options parameter of FILE_CREATE_. These attributes are also available as septe items
+(items 65 through 70).
+72 2 Write through. For disk objects, 1 if the file label specifies the use of write-through caching; 0
+indicates that buffered writes are used.
+73 2 Verify writes. For disk objects other than SQL shorthand views, 1 if the file label specifies that
+writes to the file are to be read back and the data verified; 0 otherwise.
+74 2 Serial writes. For disk objects other than SQL shorthand views, 1 if the file label specifies that
+writes are to be made serially to the mirrors when a file resides on a mirrored disk; 0 indicates
+that the system can choose to do either serial or parallel writes.
+75 2 File is open. For disk objects other than SQL shorthand views, 1 if the object is either open or
+has an incomplete TMF transaction against it; 0 otherwise. This value should always be 1 when
+it is obtained by a call to FILE_GETINFOLIST_.
+76 2 Crash open. For disk objects other than SQL shorthand views, 1 if the object was open with
+write access when a system failure occurred and the object has not been opened since; 0
+otherwise. This value should always be 0 when obtained by a call to FILE_GETINFOLIST_.
+Table Continued
+Guardian Procedure Calls (F) 447
+Item Code Size
+(Bytes)
+Description
+77 2 Rollforward needed. For disk objects other than SQL shorthand views, 1 if the object has the
+TMF rollforward-needed flag set; 0 otherwise.
+78 2 Broken. For disk objects other than SQL shorthand views, 1 if the object has the broken flag set;
+0 otherwise.
+79 2 Corrupt. For disk objects other than SQL shorthand views, 1 if the object has the corrupt flag
+set; 0 otherwise.
+80 2 Secondary partition. For disk objects, 1 if the file is a secondary partition of a partitioned file.
+81 2 Index levels. For key-sequenced disk objects, the number of levels currently used in the key
+indexing structure.
+82 2 SQL program. For disk objects, 1 if the file is a program file containing compiled SQL
+statements; 0 otherwise.
+83 2 SQL valid. For disk objects, 1 if the file is a program file containing compiled SQL statements
+and the compilation is probably valid.
+84 2 SQL-catalog name length. For disk objects, the number of bytes in the name of the SQL catalog
+associated with the object; 0 if no catalog is associated with the object.
+85 * SQL-catalog name. For disk objects, the fully qualified name of the SQL catalog associated with
+the object. The length of the name is given by item 84.
+90 2 Number of partitions. For disk objects, the number of secondary partitions on which the file
+resides. The maximum value is 15 for legacy key-sequenced files, 63 for enhanced keysequenced
+files in RVUs between H06.22/J06.11 and H06.28/J06.17, or 127 for enhanced
+key-sequenced files with increased limits in H06.28/J06.17 RVUs with specific SPRs and later
+RVUs. (For a list of the required H06.28/J06.17 SPRs, see SPR Requirements for Increased
+Enscribe Limits for the H06.28/J06.17 Release.)
+91 * Partition descriptors. For disk files, an array of four-byte partition descriptors, one for each
+secondary partition. Each entry has this structure:
+INT primary-extent-size;
+INT secondary-extent-size;
+These values give the primary and secondary extent sizes in pages (2048-byte units). The
+length of this item in bytes is four times item 90. Superseded by item 97.
+92 * Partition-volume name-length array. For disk files, an array of INT values, each giving the length
+in bytes of the volume name (supplied in item 93) on which the corresponding secondary
+partition resides. The length in bytes of this item is 2 times the value of item 90.
+93 * Partition-volume names. For disk files, the concatenated volume names of the secondary
+partitions. The names are fully qualified. The length of each is given by the corresponding entry
+in item 92. The length of this item is given by item 96, or equivalently, by the sum of the
+elements in item 92.
+94 2 Partition partial-key length. For partitioned key-sequenced disk files, the number of bytes of the
+primary key that are used to determine which partition of the file contains a particular record.
+95 * Partition partial-key values. For partitioned key-sequenced disk files, the concatenated partialkey
+values. Since the number of entries is given by item 90, and the size of each entry is given
+by item 94, the size of item 95 is the product of those two values.
+Table Continued
+Guardian Procedure Calls (F) 448
+Item Code Size
+(Bytes)
+Description
+96 2 Partition-volume names total length. For disk files, the total number of bytes occupied by the
+concatenated volume names of the secondary partitions. This is the same as the sum of the
+elements in item 92.
+97 * Partition descriptors (32-bit). An array of eight-byte partition descriptors, one for each
+secondary partition. Each entry has this structure:
+INT (32) primary-extent-size;
+INT (32) secondary-extent-size;
+These values give the primary and secondary extent sizes in pages (2048-byte units). For a
+format 1 legacy key-sequenced file, the maximum extent size is 65,535 pages; for a format 2
+legacy key-sequenced file, the maximum extent size is 536,870,912 pages. For an enhanced
+key-sequenced file, the maximum extent size is 536,870,912 pages, and the primary partition
+must have a primary extent size of at least 140 pages. The length of this item in bytes is eight
+times item 90. Supersedes item 91.
+98 * Partition-volume relative names-length array. For disk files, an array of INT byte counts, each
+giving the length of the corresponding secondary partition-volume name in the form returned
+by item 99. The length of this item is two times item 90. The length of this item is the sum of
+the elements in item 98.
+99 * Partition-volume relative names. For disk files, the concatenated names of the volumes of the
+secondary partitions. Unlike item 93, the names can be missing a system name (implying the
+system of the primary file) depending on how the names were specified when the file was
+created.
+100 2 Number of alternate keys. For disk files, the number of alternate-key fields.
+101 * Alternate-key descriptors. For disk files, an array of key-descriptor entries, one for each
+alternate key. Each entry is 12 bytes long. The structure of each entry is described under item
+101 in Table 14: FILE_CREATELIST_ Item Codes (under FILE_CREATELIST_). The length in
+bytes of this item is 12 times the value of item 100. Superseded by item 106.
+102 2 Number of alternate-key files. For disk files, the number of files holding alternate-key records.
+103 * Alternate-file name-length array. For disk files, an array of INT values, each giving the length in
+bytes of the corresponding alternate-file name found in item 104. The length in bytes of this
+item is 2 times the value of item 102.
+104 * Alternate-file names. For disk files, the concatenated names of the alternate-key files. The
+names are fully qualified. The length of each is given by the corresponding entry in item 103.
+The length of this item is given by item 105, or equivalently, by the sum of the elements of item
+103.
+105 2 Alternate-file total name length. For disk files, the total number of bytes occupied by the
+concatenated alternate-file names. This is the same as the sum of the elements in item 103.
+106 * Alternate-key descriptors (32-bit). An array of 14-byte descriptor entries, one for each alternate
+key. The structure of each entry is described under item 106 in Table 14: FILE_CREATELIST_
+Item Codes (under FILE_CREATELIST_). The length in bytes of this item is 14 times the value of
+item 100.
+If this value has never been set, the key length of the file (the value of item 46) is returned.
+Supersedes item 101.
+Table Continued
+Guardian Procedure Calls (F) 449
+Item Code Size
+(Bytes)
+Description
+108 * Alternate-file relative name-length array. For disk files, an array of INT byte counts, each giving
+the length of the corresponding alternate-key file name in the form returned by item 109. The
+length of this item is two times item 102.
+109 * Alternate-file relative names. For disk files, the concatenated names of the alternate-key files.
+Unlike item 104, the system name can be left out (implying the system of the primary file)
+depending on how the names were specified when the file was created. The length of each name
+is given by the corresponding entry in item 108. The length of this item is given by the sum of
+the elements of item 108.
+110 4 Volume capacity. For disk volumes and disk objects, the data capacity of the volume as
+indicated in the volume label, expressed in pages (2048-byte units). This value accounts for
+disk space used for data protection (such as spare sectors), but not for other system uses. For
+files residing on Storage Management Foundation (SMF) virtual disks, this item code will return
+a -1.
+111 4 Volume free space. For disk volumes and disk objects, the total free space currently available on
+the volume, in pages (2048-byte units). For files residing on Storage Management Foundation
+(SMF) virtual disks, this item code will return a 0.
+112 4 Volume fragments. For disk volumes and disk objects, the number of individual free space
+fragments on the volume. For files residing on SMF (Storage Management Foundation) virtual
+disks, this item code will return a 0.
+113 4 Largest volume fragment. For disk volumes and disk objects, the size in pages of the largest free
+space fragment on the volume. For files residing on SMF (Storage Management Foundation)
+virtual disks, this item code will return a 0.
+114 16 Disk drive types. For disk volumes and disk objects, the types of drives on which the volume is
+mounted. This item contains two eight-byte fields that give the types of the primary and mirror
+drives respectively. Each field is a drive-product number in ASCII. If the information is
+unavailable for a drive (because it's inaccessible or not configured), the corresponding field is
+returned blank. For drive models 4110 and 4120, which cannot be distinguished by software,
+the returned value is 4110. For files residing on SMF (Storage Management Foundation) virtual
+disks, this item code will return blanks.
+115 8 Disk drive capacities. For disk volumes and disk objects, the capacities in pages (2048-byte
+units) of the primary and mirror drives on which the volume is mounted. This item contains two
+INT(32) values, expressing in pages (2048-byte units) the capacities of the primary and
+mirror drives respectively. The values account for disk space used for data protection (such as
+spare sectors), but not for other system uses. If the information is unavailable for a drive
+(because it is inaccessible or not configured), 0D is returned for that drive. For files residing on
+SMF (Storage Management Foundation) virtual disks, this item code will return blanks.
+116 2 Sequential block buffering. 1 if the open is using a sequential block buffer; 0 otherwise.
+117 8 Last open LCT. For disk objects, the timestamp of the last time the file was opened, expressed in
+the local civil time (LCT) of the system on which the file resides.
+118 8 Expiration LCT. For disk objects, the timestamp giving the time before which the file cannot be
+purged, expressed in the local civil time (LCT) of the system on which the file resides. If this
+attribute has not been set, the returned field is zero-filled.
+119 8 Creation LCT. For disk objects, the timestamp of the file's creation, expressed in the local civil
+time (LCT) of the system on which the file resides.
+Table Continued
+Guardian Procedure Calls (F) 450
+Item Code Size
+(Bytes)
+Description
+136 4 Partition EOF. For disk objects other than SQL shorthand views, the end-of-file value of the
+partition named in the open operation (when returned by FILE_GETINFOLIST_) or of the
+partition named in this call (when returned by FILE_GETINFOLISTBYNAME_). A returned value
+of -1 means that the end-of-file value cannot fit into this unsigned four-byte attribute. Item 193
+must be used to get the correct value. Superseded by item 193.
+137 4 Partition maximum size. For disk objects other than SQL shorthand views, the maximum
+allowable size in bytes of the partition named in the open operation (when returned by
+FILE_GETINFOLIST_) or of the partition named in this call (when returned by
+FILE_GETINFOLISTBYNAME_). A returned value of -1 means that the partition maximum size
+cannot fit into this unsigned four-byte attribute. Item 194 must be used to get the correct value.
+Superseded by item 194.
+140 8 Partition modification time. For disk objects other than SQL shorthand views, the Julian GMT
+timestamp indicating the last modification time of the partition named in the open operation
+(when returned by FILE_GETINFOLIST_) or of the partition named in this call (when returned by
+FILE_GETINFOLISTBYNAME_).
+141 8 Partition modification LCT. For disk objects other than SQL shorthand views, the timestamp
+indicating the last modification time of the partition named in the open operation (when
+returned by FILE_GETINFOLIST_) or of the partition named in this call (when returned by
+FILE_GETINFOLISTBYNAME_). The time is expressed in the local civil time (LCT) of the system
+on which the file resides. It is derived from the Julian GMT partition modification time (item code
+140).
+142 4 Aggregate EOF. For disk objects, the end-of-file value of the file. For a partitioned file where the
+entire file has been opened, the end-of-file value of the entire file is returned. A returned value
+of %hFFFFFFFF indicates that the end-of-file value cannot fit into this unsigned four-byte
+attribute. In this case, to obtain the end-of-file value, use the eight-byte attribute, which is item
+code 191. Superseded by item 191.
+143 4 Aggregate maximum file size. For disk objects, the maximum allowable size in bytes of the file.
+For a partitioned file where the entire file has been opened, the maximum size of the entire file
+is returned. A returned value of %hFFFFFFFF indicates that the maximum file size cannot fit into
+this unsigned four-byte attribute. In this case, to obtain the maximum file size, use the eightbyte
+attribute, item code 192. Superseded by item 192.
+144 8 Aggregate modification time. For disk objects, the Julian GMT timestamp indicating the last
+modification time of the file. For a partitioned file, the most recent modification time of all
+accessible partitions.
+145 8 Aggregate modification LCT. For disk objects, the timestamp indicating the last modification
+time of the file, expressed in the local civil time (LCT) of the system on which the file resides. For
+a partitioned file, the most recent modification time of all accessible partitions.
+153 2 Logical (packed) record length. In an SQL object, the maximum number of bytes in a packed
+record.
+160 6 Three-word partition modification LCT. For disk objects other than SQL shorthand views, the
+three-word timestamp indicating the last modification time of the partition named in the open
+operation (when returned by FILE_GETINFOLIST_) or of the partition named in this call (when
+returned by FILE_GETINFOLISTBYNAME_). The time is expressed in the local civil time (LCT) of
+the system on which the file resides and represents the number of 10-millisecond units since
+midnight (00:00) on December 31, 1974.
+161 2 OSS file. 1 if the file is an OSS file; 0 otherwise.
+Table Continued
+Guardian Procedure Calls (F) 451
+Item Code Size
+(Bytes)
+Description
+164 4 OSS file owner's group ID. The group ID is a number in the range 0 through 65535.
+165 4 OSS access permissions. Applies only to OSS files. See the chmod(2) function reference page
+either online or in the Open System Services System Calls Reference Manual for a description of
+OSS access permissions.
+166 2 OSS open. 1 if the open was performed by any of these OSS functions: creat(), chdir(),
+open(), or opendir(); 0 otherwise. This code applies only to FILE_GETINFOLIST_.
+167 4 File owner. For disk files, the user ID number that identifies the owner of the file. The user ID is a
+number in the range 0 through 65535.
+168 2 OSS number of links. Applies only to OSS files.
+169 2 Security mechanisms in effect. For disk objects, the word of bits indicates the security
+mechanisms in effect for the given object. Note that the security mechanism of an object is not
+necessarily related to the overall security of the subvolume or volume.
+<0:1
+0>
+reserved, reported as zero.
+<11> OSS ACL file security (includes standard and owned OSS ACLs)
+<12> OSS security
+<13> SQL security
+<14> Safeguard file security
+<15> Guardian file security
+176 2 Unreclaimed free space. For SQL tables and indexes, 1 if the object has the F flag (unreclaimed
+free space) set; 0 otherwise.
+177 2 Incomplete SQLDDL operation. For SQL tables and indexes, 1 if the object has the D flag
+(incomplete SQLDDL operation) set; 0 otherwise.
+178 2 Physical volume name length. The length in bytes of the name returned by item 179.
+179 * Physical volume name. For disk objects, the name of the volume on which the object resides, in
+external form with system name. This can be different from the volume indicated in the object's
+name (for example, for NonStop Storage Manager Foundation (SMF) objects).
+180 2 Physical volume primary processor. For disk objects, the processor number that contains the
+current primary disk process supporting the volume on which the object resides.
+182 2 Physical file name length. The length in bytes of the name returned by item 183.
+183 * Physical file name. For SMF disk objects, the name of the physical file where the data resides, in
+fully qualified external form. For other disk objects, this item has zero length.
+184 2 Referencing logical name length. The length in bytes of the name returned by item 185.
+185 * Referencing logical name. For a physical file containing the data of a SMF virtual disk object, the
+name of that SMF object in fully qualified external form. For other disk objects, including those
+specified by a SMF logical name, this item has zero length.
+191 8 Aggregate EOF 64-bit. For disk objects, the end-of-file value of the file. For a partitioned file
+where the entire file has been opened, the end-of-file value of the entire file is returned.
+Table Continued
+Guardian Procedure Calls (F) 452
+Item Code Size
+(Bytes)
+Description
+192 8 Aggregate maximum file size 64-bit. For disk objects, the maximum allowable size in bytes of
+the file. For a partitioned file where the entire file has been opened, the maximum size of the
+entire file is returned.
+193 8 Partition end-of-file (64-bit). For disk objects other than SQL shorthand views, the number of
+bytes in the object. If the file is partitioned, determined from the specified partition only.
+194 8 Partition maximum size (64-bit). For disk objects other than SQL shorthand views, the
+maximum number of bytes the object is allowed to contain. If the file is partitioned, determined
+from the specified partition only.
+195 2 File format. Returns the file format (1 or 2). Format 1 files allow only as many as 4 KB blocks
+and as many as 2 GB partitions; format 2 files allow larger blocks and partitions.
+196 4 Logical record length (32-bit). For structured disk files, the maximum length of the logical
+record in bytes. In L17.08/J06.22 and later RVUs, the maximum record length for format 2
+entry-sequenced files is 27,576. In H06.28/J06.17 RVUs with specific SPRs and later RVUs, the
+maximum record length for format 2 key-sequenced files is 27,648. (For a list of the required
+H06.28/J06.17 SPRs, see SPR Requirements for Increased Enscribe Limits for the H06.28/
+J06.17 Release.) For format 2 relative files, the maximum record length is 4044. For format 1
+entry-sequenced and relative files, the maximum record length is 4072. For format 1 keysequenced
+files, the maximum record length is 4062. If omitted, 80 is used. For queue files, this
+parameter must include 8 bytes for a timestamp. For more details, see the recordlen parameter
+of FILE_CREATE_. This parameter is ignored for unstructured files.
+Supersedes item 43.
+197 4 Block length (32-bit). For structured files, the length in bytes of each block of records in the file.
+In L17.08/J06.22 and later RVUs, the maximum block length for format 2 entry-sequenced files
+is 32,768. In H06.28/J06.17 RVUs with specific SPRs and later RVUs, the maximum block
+length for format 2 key-sequenced files is 32,768. (For a list of the required H06.28/J06.17
+SPRs, see SPR Requirements for Increased Enscribe Limits for the H06.28/J06.17 Release.)
+For format 1 entry-sequenced and key-sequenced files, and format 1 or 2 relative files, the
+maximum block length is 4096.For earlier RVUs, the maximum block length is 4096, regardless
+of the file organization or format. Data-block sizes are rounded up to power-of-two multiples of
+the sector size: 512, 1024, 2048, 4096, or 32,768. For example, if a 3K byte block were
+specified, the system would use 4096. For details, see the blocklen parameter of FILE_CREATE_.
+Supersedes item 44.
+198 4 Key offset (32-bit). For key-sequenced disk files, the number of bytes from the beginning of the
+record to where the primary-key field starts. This item code applies only to Enscribe files. In
+H06.28/J06.17 RVUs with specific SPRs and later RVUs, the maximum key offset for format 2
+key-sequenced files is 27,647. (For a list of the required H06.28/J06.17 SPRs, see SPR
+Requirements for Increased Enscribe Limits for the H06.28/J06.17 Release.) For earlier
+RVUs, the maximum key offset is 4039 for format 2 files and 4061 for format 1 files. For queue
+files, the key offset must be 0.
+Supersedes item 45.
+199 4 Primary extent size (32-bit). The size in pages (2048-byte units) of the first extent. Supersedes
+item 50.
+200 4 Secondary extent size (32-bit). The size in pages (2048-byte units) of extents after the first
+extent. Supersedes item 51.
+Table Continued
+Guardian Procedure Calls (F) 453
+Item Code Size
+(Bytes)
+Description
+201 8 Next record pointer (64-bit). For opened disk files other than key-sequenced, and not accessed
+with alternate key, the setting of the next-record pointer in 64-bit form. Supersedes item 11.
+202 8 Current record pointer (64-bit). For opened disk files other than key-sequenced, and not
+accessed with alternate key, the setting of the current record pointer in 64-bit form. Supersedes
+item 12.
+Table Continued
+Guardian Procedure Calls (F) 454
+Item Code Size
+(Bytes)
+Description
+203 2 Current key length. For opened structured disk files, the length in bytes of the current key value
+(see item 204).
+In L17.08/J06.22 and later RVUs, the maximum alternate key length for format 2 entrysequenced
+files varies based on the following factors:
+• If the alternate keys are unique, the maximum length is 2046 bytes [2048(maximum key
+length) - 2(key specifier)].
+• If the alternate key allows duplicates and is defined as insertion-ordered, the maximum
+length is 2030 bytes [2,048(maximum key length) - 2(key specifier) - 8(primary key length)
+- 8(timestamp)].
+• If the alternate keys allow normal duplicates, the maximum length is 2038 bytes
+[2048(maximum key length) - 2(key specifier) - 8(primary key length)].
+For format 2 entry-sequenced files in RVUs prior to L17.08/J06.22:
+• If the alternate keys are unique, the maximum length is 253 bytes [255 (maximum key
+length) - 2 (key specifier)].
+• If the alternate key allows duplicates and is defined as insertion-ordered, the maximum
+length is 237 bytes [255 (maximum key length) - 2 (key specifier) -8 (primary key length) -
+8 (timestamp)].
+• If the alternate keys allow normal duplicates, the maximum length is 245 bytes [255
+(maximum key length) - 2 (key specifier) - 8 (primary key length)].
+For format 1 entry-sequenced files:
+• If the alternate keys are unique, the maximum length is 253 bytes [255 (maximum key
+length) - 2 (key specifier)].
+• If the alternate key allows duplicates and is defined as insertion-ordered, the maximum
+length is 241 bytes [255 (maximum key length) - 2 (key specifier) - 4 (primary key length) -
+8 (timestamp)].
+• If the alternate keys allow normal duplicates, the maximum length is 249 bytes [255
+(maximum key length) - 2 (key specifier) - 4 (primary key length)].
+In H06.28/J06.17 RVUs with specific SPRs and later RVUs, the maximum primary key length for
+format 2 key-sequenced files is 2048. (For a list of the required H06.28/J06.17 SPRs, see SPR
+Requirements for Increased Enscribe Limits for the H06.28/J06.17 Release.) For earlier
+RVUs, the maximum primary key length is 255, regardless of whether it is a format 1 or format
+2 file.
+In H06.28/J06.17 RVUs with specific SPRs and later RVUs, the maximum alternate key length
+for format 2 key-sequenced files varies based on the following factors:
+Table Continued
+Guardian Procedure Calls (F) 455
+Item Code Size
+(Bytes)
+Description
+• If the alternate keys are unique, the maximum length is 2046.
+• If the alternate key allows duplicates and is defined as insertion-ordered, the maximum
+length is 2038 – primary key length.
+• If the alternate keys allow normal duplicates, the maximum length is 2046 – primary-key
+length.
+For earlier RVUs, the maximum alternate key length, regardless of whether it is a format 1 or
+format 2 file, varies based on the following factors:
+• If the alternate keys are unique, the maximum length is 253.
+• If the alternate key allows duplicates and is defined as insertion-ordered, the maximum
+length is 245 – primary key length.
+• If the alternate keys allow normal duplicates, the maximum length is 253 – primary-key
+length
+For further information about maximum key length, see the Enscribe Programmer's Guide.
+Supersedes item 14.
+204 * Current key value (64-bit). The current key value for opened structured disk files. The length is
+given by item 203. Supersedes item 15. This item differs from item 15 for non-key-sequenced
+files when the current key is the primary key, in which case the 64-bit form of the key is
+returned instead of the 32-bit form.
+205 2 Current primary-key length. For opened structured disk files, the length in bytes of the current
+primary-key value (obtained using item 206). In H06.28/J06.17 RVUs with specific SPRs and
+later RVUs, the maximum primary-key length for format 2 key-sequenced files is 2048. (For a
+list of the required H06.28/J06.17 SPRs, see SPR Requirements for Increased Enscribe Limits
+for the H06.28/J06.17 Release.) For earlier RVUs, the maximum primary-key length is 255,
+regardless of whether it is a format 1 or format 2 file. Supersedes item 16.
+206 * Current primary-key value (64-bit). The current primary-key value for opened structured disk
+files. The length is given by item 205. Supersedes item 17. This item differs from item 17 in that
+for non-key-sequenced files, the 64-bit form of the key is returned instead of the 32-bit form.
+212 2 Block checksumming option. For format 2 structured files, 1 indicates that the checksum
+calculation and comparison is used; 0 indicates it is not used.
+221 * Partition maximum extent size array. For partitioned disk files, an array of INT of the maximum
+extents value for each secondary partition. The length of the array is 2 times the number of
+partitions (item 90).
+225 2 SQL/MX object. Applies only to disk objects. 1 if the object is an SQL/MX object, 0 otherwise.
+226 2 SQL/MX physical object. Applies only to SQL/MX objects.
+<0:1
+4>
+reserved
+<15> 1 if resource fork, 0 otherwise
+227 2 MX partition method. Applies only to SQL/MX objects.
+1 SQL/MX range partitioned
+Table Continued
+Guardian Procedure Calls (F) 456
+Item Code Size
+(Bytes)
+Description
+2 SQL/MX hash partitioned
+228 2 ANSI name length. Applies only to SQL/MX objects. The length, in bytes, of the ANSI name. The
+length is 0 if the MX object has no ANSI name (for example, a resource fork).
+229 * ANSI name. Applies only to SQL/MX objects. The ANSI name of the MX object. The length of the
+name is given bsy item 228.
+230 2 ANSI name space. Applies only to SQL/MX objects. The name of the ANSI name space. The
+value is either "TA" or "IX".
+2351 2 Direct I/O buffer protection. Applies only to disk objects. The state of the TRUST flag indicating
+direct I/O access permission to user buffers when the process is running. The values are:
+0 TRUST flag is disabled
+1 TRUST flag is enabled for private access to the process
+3 TRUST flag is enabled for shared access to the process
+236 32 Disk drive types 2. For disk volume and disk objects, the types of drives on which the volume is
+mounted. This item returns the same information as the info item 114 (Disk Drive Type) except
+that it returns 16 bytes for each for the primary and secondary drives. Blanks are returned if
+one of the drives is not present.
+237 10 ErrorSetExternally. For disk files, an array of 5 INT values is returned.
+0 Indicates if the file-system error variables are set externally anytime for that file. If the
+value is 0, it implies that the file-system errors have not been overridden externally. If
+the value is 1, it implies that the file-system errors have been overridden externally.
+That is, FILE_SETLASTERROR_ has been invoked for this file.
+1 Provides last-error value before it was overridden, otherwise 0 is returned.
+2 Partition in error before overridden, otherwise 0 is returned.
+3 Key in error before overridden, otherwise 0 is returned.
+4 Provides error-detail overridden, otherwise 0 is returned.
+The item code returns this information for the specified filenum. If the filenum identifies an open
+file, the information associated with that file number is returned. If the filenum is -1, the
+information for an operation not associated with a file number (such as a purge, waited open, or
+failed create operation) is returned. For more information about the file-system error overrides,
+see the FILE_SETLASTERROR_ Procedure.
+2382 2 PRIVSETID File Privilege.
+For disk objects, if PRIVSETID file privilege is set, the value returned is 1. Otherwise, the value
+returned is 0.
+For SQL files, FILE_GETINFOLISTBYNAME_ returns the file privilege and the
+FILE_GETINFOLIST_ always returns 0.
+For more information, see OSS Considerations of PROCESS_CREATE_ API.
+Table Continued
+Guardian Procedure Calls (F) 457
+Item Code Size
+(Bytes)
+Description
+2392 2 PRIVSOARFOPEN File Privilege.
+For disk objects, if PRIVSOARFOPEN file privilege is set, the value returned is 1. Otherwise, the
+value returned is 0.
+For SQL files, FILE_GETINFOLISTBYNAME_ returns the file privilege and the
+FILE_GETINFOLIST_ always returns 0.
+For more information, see OSS Considerations of PROCESS_CREATE_ API.
+2402 8 OSS fileset device identifier. ID of the device containing the directory entry. This item code is
+applicable only to OSS disk files.
+For more information, see st_dev in stat(2) function manpage or Open System Services
+System Calls Reference Manual.
+2412 8 OSS File serial number (inode number). Unique number of file within an OSS file set. This item
+code is applicable only to OSS disk files.
+For more information, see st_ino in stat(2) function manpage or Open System Services
+System Calls Reference Manual.
+2422 8 OSS File size. Size of the file in bytes. This item code is applicable only to OSS disk files.
+For more information, see st_size in stat(2) function manpage or Open System Services
+System Calls Reference Manual.
+NOTE: The OSS file-system caching state of the file in the CPU is considered while fetching the
+value for this item code, unlike the other item codes 143, 191 and 193 that also return the file
+size.
+2432 8 OSS Last access time. Julian GMT timestamp of the last time the file was accessed. This item
+code is applicable only to OSS disk files.
+For more information, see st_atime in stat(2) function manpage or Open System
+Services System Calls Reference Manual.
+NOTE: The OSS file-system caching state of the file in the CPU is considered while fetching the
+value for this item code.
+2442 8 OSS Last modification time. Julian GMT timestamp indicating the last modification time of the
+file. This item code is applicable only to OSS disk files.
+For more information, see st_mtime in stat(2) function manpage or Open System
+Services System Calls Reference Manual.
+NOTE: The OSS file-system caching state of the file in the CPU is considered while fetching the
+value for this item code, unlike the item codes 140, 141, 144 and 145 that also returns the last
+modification timestamp.
+Table Continued
+Guardian Procedure Calls (F) 458
+Item Code Size
+(Bytes)
+Description
+2452 8 OSS Status Change time. Julian GMT timestamp of the last time the file's status was changed.
+This item code is applicable only to OSS disk files.
+For more information, see st_ctime in stat(2) function manpage or Open System
+Services System Calls Reference Manual.
+NOTE: The OSS file-system caching state of the file in the CPU is considered while fetching the
+value for this item code.
+2462 4 OSS file's basemode. Permissions for the file owner, owning group, and others if the file has
+optional access control list (ACL) entries. 0 if the file has no optional ACL entries. This item code
+is applicable only to OSS disk files.
+For more information, see st_basemode in stat(2) function manpage or Open System
+Services System Calls Reference Manual.
+1001 2 Tape process: Density
+–1 unsupported or unknown
+0 800 bpi (NRZI)
+1 1600 bpi (PE)
+2 6250 bpi (GCR)
+8 38000 bpi
+9 Digital Data Storage (DDS)
+1002 2 Tape process: Compression
+-1 unsupported or unknown
+1 compression disabled
+2 compression enabled
+1003 2 Tape process: Tapemode
+-1 unsupported or unknown
+0 startstop
+1 streaming
+2 slow streaming
+3 fast streaming
+1004 2 Tape process: Level of buffering
+-1 unsupported or unknown
+0 record
+1 file
+2 reel
+1005 2 Tape or Open SCSI process: Device subtype
+Table Continued
+Guardian Procedure Calls (F) 459
+Item Code Size
+(Bytes)
+Description
+1 unknown
+0 passthrough mode
+5 5120 tape drive
+6 5160 or 5170 tape drive
+7 5130 tape drive
+8 5180 tape drive
+9 5190 tape drive
+10 5188 tape drive
+11 5142 tape drive
+14 521A, 524A, or 525A tape drives
+1006 2 Tape process: Automatic Cartridge Loader (ACL) status
+-1 not installed or unknown
+1 installed
+1007 2 Tape process: Number of tracks
+-1 unknown
+0 not applicable
+9 9-track tape drive
+18 18-track tape drive
+36 36-track tape drive
+1008 2 Open SCSI process: SIM queue status
+0 not frozen
+1 frozen
+1009 2 Tape or Open SCSI process: Current device state
+0 not ready
+1 online or ready
+1010 2 Tape process: current device status
+1011 2 Tape process: Short write mode
+-1 unsupported or unknown
+0 allow writes shorter than 24 bytes; a record shorter than 24 bytes is padded with zeros
+to a length of 24 bytes (default).
+1 disallow writes shorter than 24 bytes.
+2 allow writes shorter than 24 bytes; no padding is done on records shorter than 24
+bytes.
+Table Continued
+Guardian Procedure Calls (F) 460
+Item Code Size
+(Bytes)
+Description
+1012 2 Tape process: Checksum mode
+0 normal I/O mode
+1 checksum mode
+1013 2 Tape or Open SCSI process: Tracing level
+0 no tracing
+x x tracing level
+1014 2 Tape or Open SCSI process: Number of openers
+1 1 opener (might be exclusive)
+x x openers
+1015 2 Tape process: Current controller state
+-1 unknown
+0 unloaded
+1 loaded
+1016 2 Tape process: Current assignment status
+-1 no applicable
+0 unassigned
+1 assigned (5188 tape drive only)
+1017 2 Tape process: Current tape movement
+-1 not at BOT
+0 at BOT
+1018 2 Tape process: Return end-of-tape (EOT) message when writing labeled tapes
+0 volume switching is transparent
+1 notify user of volume switch by sending error 150 (EOT). COBOL applications do not
+receive error 150 (EOT); the COBOL run-time library (RTL) handles this error
+transparently.
+1019 2 Tape process: Pending errors
+1020 2 Tape process: Reason for downing
+1021 2 Tape process: Current checkpoint state
+1022 2 Open SCSI process: Number of open paths
+1023 2 Open SCSI process: Maximum number of I/O requests
+1024 2 Open SCSI process: Number of pending I/Os
+1025 2 Open SCSI process: Highest number of pending I/Os since the IOP was started
+1028 2 Open SCSI process: Maximum number of openers
+Table Continued
+Guardian Procedure Calls (F) 461
+Item Code Size
+(Bytes)
+Description
+1900 4 Tape or Open SCSI process: Maximum transfer length allowed 32767 maximum transfer length
+is 32767 bytes 57344 maximum transfer length is 57344 bytes
+3102 2 Tape process: Length in bytes of attribute 3103. 0 if no tape is mounted or the tape does not
+have labels.
+3103 up to
+240
+Tape process: Automatic Volume Recognition (AVR) labels Beginning-of-volume label (VOL1)
+label and the first beginning-of-file-section label group (HDR1, HDR2).
+3104 2 Tape process: Length in bytes of attribute 3105. 0 if no tape is mounted or the tape does not
+have labels.
+3105 up to
+160
+Tape process: Current labels Beginning-of-file-section label group (HDR1, HDR2) of the current
+file.
+1 Item code 235 is supported only on

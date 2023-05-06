@@ -1,0 +1,153 @@
+?NOCODE, NOICODE, NOMAP, NOLMAP
+?SYMBOLS, INSPECT, SAVEABEND, NOLIST
+
+LITERAL
+  lCR = 13, -- Line separator ("carriage return") in 65** term buffer
+  lESC = 27; -- ASCII escape character
+
+INT
+  .buf[ 0:1920/2-1 ],
+  .oldmode[ 0:1 ] := -1,
+  .lbuf[ 0:1920/2-1 ],
+  count,
+  term,
+  out;
+
+STRING
+  .sbuf := @buf'<<'1,
+  .s := @lbuf'<<'1;
+
+?SOURCE$SYSTEM.SYSTEM.EXTDECS(
+? ABEND
+? CLOSE
+? DEBUG
+? FILEINFO
+? MYTERM
+? OPEN
+? FILE_OPEN_
+? READ
+? SETMODE
+? STOP
+? WRITE
+? WRITEREAD
+? )
+
+PROC writeLines;
+BEGIN
+  STRING
+    .line := @sbuf,
+    .eol;
+
+  -- Loop until buffer exhausted:
+  WHILE ( 2+2 = 4 ) DO
+  BEGIN
+    SCAN line UNTIL lCR -> @eol;
+    -- Exit when stopper hit:
+    IF ( $CARRY ) THEN
+      RETURN;
+    s':='line FOR ( count := @eol'-'@line );
+    WRITE( out, lbuf, count );
+    @line := @eol[ 1 ];
+  END;
+END; -- PROC writeLines()
+
+
+PROC errorExit;
+BEGIN
+  -- Reset terminal mode if necessary:
+  IF ( oldmode <> -1 ) THEN
+    SETMODE( term, 8, oldmode, oldmode[ 1 ] );
+  ABEND();
+END; -- PROC errorExit()
+
+
+PROC capture_20010413 MAIN;
+BEGIN
+  int .rcvName[0:11] := ["$receive" , 8 * ["  "]];
+  int rcv;
+  int len;
+  int err;
+
+  -- Open $receive:
+  call open(rcvName, rcv);
+  IF ( <> ) THEN
+  BEGIN
+    FILEINFO(rcv, err);
+    errorExit();
+  END;
+
+  -- Read the startup message:
+  READ( rcv, buf, 200, len );
+  IF ( <> ) THEN
+  BEGIN
+    FILEINFO(rcv, err);
+    if( err <> 6 ) THEN
+      errorExit();
+  END;
+  CLOSE( rcv );
+
+  -- Open the OUT file (may be a TACL variable):
+  OPEN( buf[ 21 ], out );
+  IF ( <> ) THEN
+  BEGIN
+    FILEINFO(out, err);
+    errorExit();
+  END;
+
+  -- Extract terminal name:
+  MYTERM( buf );
+  OPEN( buf, term ); -- Open the terminal
+  IF ( <> ) THEN
+  BEGIN
+    FILEINFO(term, err);
+    errorExit();
+  END;
+
+  -- Switch to block mode:
+  SETMODE( term, 8, 1, 1, oldmode );
+  IF ( <> ) THEN
+  BEGIN
+    FILEINFO(term, err);
+    errorExit();
+  END;
+
+  -- Unlock the keyboard:
+  sbuf':='[ %33, "b" ];
+  WRITE( term, buf, 2 );
+  IF ( <> ) THEN
+  BEGIN
+    FILEINFO(term, err);
+    errorExit();
+  END;
+
+  -- Wait for any fkey to be hit:
+  READ( term, buf, 4 );
+  IF ( <> ) THEN
+  BEGIN
+    FILEINFO(term, err);
+    errorExit();
+  END;
+
+  -- Escape sequence (ESC"<") to read terminal buffer:
+  sbuf':='[ lESC, "<" ];
+  writeread( term, buf, 2, 1920, count );
+  if ( <> ) THEN
+  begin
+    fileinfo(term, err);
+    errorExit();
+  end;
+
+  -- Insert a "SCAN stopper" in termbuffer:
+  sbuf[ count ] := 0;
+
+  -- Return to previous terminal mode:
+  setmode( term, 8, oldmode, oldmode[ 1 ] );
+  close ( term );
+
+  -- Split term buffer into separate lines:
+  writeLines();
+
+  -- All done:
+  close( out );
+  stop();
+end; -- PROC capture_20010413 MAIN

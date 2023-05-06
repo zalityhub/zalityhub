@@ -1,0 +1,429 @@
+?symbols, inspect, nomap, nolmap, nolist
+?NOCODE,INSPECT,PAGE"Global Data Declarations"
+
+LITERAL
+    promptchar = "-"; -- FUP prompt character
+
+INT(16)
+    .receive[ 0:11 ] := [ "$RECEIVE", 8*[ " " ] ],
+    .fupname[ 0:11 ] := [ "$SYSTEM SYSTEM FUP " ],
+    .pid[ 0:11 ] := [ 12*[ " " ] ],
+    .name[ 0:2 ] := [ "$AFUP " ],
+    .termname[ 0:11 ], -- My terminal name (filled by MYTERM later)
+    .dbuf[ 0:127 ], -- FUP communication buffer
+    replylength, -- Length of IPC reply message
+    .replybuffer, -- Address of reply buffer
+    .buf[ 0:127 ], -- Utility buffer
+    FUPrunning, -- Will be set zero when FUP stops or abends
+    replyerror, -- Error number to be returned
+    error, -- General error slot
+    count, -- General counter
+    recv, -- Receive file #
+    term, -- Hometerm file #
+    fup, -- FUP process file #
+    log; -- Log file #
+
+-- Startup message structure:
+STRUCT .su;
+  BEGIN
+    INT msgcode, -- STARTUP message = -1 (%177777)
+        vol[ 0:3 ], -- Default volume
+        svol[ 0:3 ], -- Default subvolume
+        infile[ 0:11 ], -- IN file name
+        outfile[ 0:11 ]; -- OUT file name
+    STRING param[ 0:1 ]; -- Startup parameter (empty, two null characters)
+  END;
+
+STRING
+    .s, -- Utility STRING pointer
+    .sbuf := @buf'<<'1, -- Byte addressable <buf>
+    .sdbuf := @dbuf'<<'1; -- Byte addressable <dbuf>
+
+?NOLIST, SOURCE $SYSTEM.SYSTEM.EXTDECS0(
+? ABEND
+? AWAITIO
+? CLOSE
+? CONTIME
+? DEBUG
+? FILEINFO
+? FNAMECOMPARE
+? GETCRTPID
+? MYPID
+? MYTERM
+? NEWPROCESS
+? NUMOUT
+? OPEN
+? POSITION
+? PROCESSINFO
+? READUPDATE
+? RECEIVEINFO
+? REPLY
+? SHIFTSTRING
+? STOP
+? TIMESTAMP
+? WRITE
+? WRITEREAD
+? )
+
+define      get^file^error(file, string^error) =
+                begin
+                  call file_getinfo_ (file.fn, file.errno);
+                  string^error gets "     ";
+                  call dnumout(string^error, $dbl(file.errno), 10);
+                end;#;
+
+define      FatalExit(message,error) =
+                begin
+                    WriteString(stderr, message);
+                    WriteNum(stderr, error);
+                    FileFlush(stderr);
+                    PROCESS_STOP_;
+                end#;
+
+
+?PAGE"Procedure: ABORTIT() - Abnormal process termination"
+PROC abortit;
+  BEGIN
+    -- Save last seen file system error (for debugger):
+    FILEINFO( -1, error );
+
+-- Log abort message:
+    sbuf':='"Abnormal process termination" -> @s;
+    WRITE( term, buf, @s'-'@sbuf );
+    DEBUG();
+    ABEND();
+END;
+
+
+?PAGE"Procedure: DATETIME() - Extract date and time"
+INT PROC DATETIME( sdate );
+    STRING .sdate;
+BEGIN
+    STRING months = 'P' := "010203040506070809101112";
+    INT(16) nextbyte,
+            time[ 0:2 ],
+            datetime[ 0:6 ];
+
+    -- Peek at the clock...
+    TIMESTAMP( time );
+
+    -- Fill output string with ASCII date and time values:
+    CONTIME( datetime, time, time[ 1 ], time[ 2 ] );
+    sdate':='"YY-MM-DD, HH:MM'SS" -> nextbyte;
+    NUMOUT( sdate, datetime, 10, 2 );
+    sdate[ 3 ]':='months[ ( datetime[ 1 ]-1 )'<<'1 ] FOR 2;
+    NUMOUT( sdate[ 06 ], datetime[ 2 ], 10, 2 );
+    NUMOUT( sdate[ 10 ], datetime[ 3 ], 10, 2 );
+    NUMOUT( sdate[ 13 ], datetime[ 4 ], 10, 2 );
+    NUMOUT( sdate[ 16 ], datetime[ 5 ], 10, 2 );
+    RETURN nextbyte;
+END;
+
+?PAGE"Procedure: FUPMESSAGE() - Data received from FUP"
+PROC FUPmessage;
+BEGIN
+    INT(16) mcount, -- Byte count returned by RECEIVEINFO()
+            .mpid[ 0:3 ], -- Originator PID returned by RECEIVEINFO()
+            havecmd := 0; -- When something resembling a command is input
+STRING .ss, -- Utility pointer
+       fc[ 0:1 ]; -- Temp for FC check
+
+    -- Pick up sender process identification and "read count" value:
+    RECEIVEINFO( mpid,,,, mcount );
+
+    -- Make sure the message originates from our FUP process:
+    IF ( mpid'<>'pid FOR 3 ) THEN
+    BEGIN
+        sbuf':='"Unsolicited non-system message received (ignored)" -> @s;
+        WRITE( log, buf, @s'-'@sbuf );
+        replyerror := 66; -- Simulate "wrong OPEN id"
+        RETURN;
+    END;
+
+    -- Pre-set reply error and size values:
+    replyerror := replylength := 0;
+    --
+    -- At this point, if <mcount> is ZERO, we are receiving list output from FUP,
+    -- and we must do a "dummy" REPLY for each "line" received.
+    --
+    -- If <mcount> is > zero, then FUP is prompting (and the character received
+    -- should be a "-") and we must REPLY with the FUP command to be executed.
+    --
+    IF ( mcount ) THEN
+    BEGIN
+        IF ( count AND ( count <> 1 OR ( dbuf.<8:15> <> promptchar ) ) ) THEN
+        BEGIN
+            sbuf':='"Unrecognized prompt received (ignored)" -> @s;
+            WRITE( log, buf, @s'-'@sbuf );
+            RETURN;
+        END;
+        --
+        -- Build the FUP command here (we are responding to FUP's "-" prompt), set
+        -- <replylength> to the length of the command entered at our "--" prompt:
+        --
+        WHILE ( NOT havecmd ) DO -- Loop until a good command is entered:
+BEGIN
+sbuf':='"--"; -- Prompt characters
+WRITEREAD( term, buf, 2, 100, count ); -- Get command
+FILEINFO( term, error );
+IF ( error = 1 ) THEN -- EOF?
+BEGIN
+count := 4;
+buf':='"EXIT"; -- Issue an "internal" EXIT command
+END;
+sbuf[ count ] := 0; -- SCAN stopper
+SCAN sbuf WHILE " " -> @s; -- Ignore leading blanks
+SCAN s UNTIL 0 -> @ss; -- Locate SCAN stopper
+count := @ss'-'@s; -- Compute non-blank count
+fc':='s FOR 2; -- Save possible FC
+SHIFTSTRING( fc, 2, 0 ); -- Upshift to check for "FC"
+IF ( count ) THEN
+BEGIN
+IF ( count = 2 AND fc'='"FC" ) THEN
+BEGIN
+--
+-- This is where the FC command should be implemented (in this
+-- example I simply disallow the FC command):
+--
+sbuf':='"FC is not allowed in this front-end process" -> @s;
+WRITE( term, buf, @s'-'@sbuf );
+END
+ELSE
+havecmd := -1 -- We MAY have a good command input...
+END;
+END;
+replylength := count; -- Set length of reply buffer
+@replybuffer := @buf; -- Set address of reply buffer
+WRITE( log, buf, @s'-'@sbuf ); -- Copy command to log
+END
+ELSE
+BEGIN
+--
+-- If we end up here, FUP is "listing output" (multiple line output). In this
+-- case, we simply reply with error 0 (must be done to indicate that we are
+-- ready for the next "line", if any), after writing the data received (from
+-- FUP) to the log/home terminal.
+--
+WRITE( term, dbuf, count ); -- Write data to hometerm...
+WRITE( log, dbuf, count ); -- and to the log file
+END;
+END;
+
+?PAGE"Procedure: STARTFUP() - Start the FUP process"
+INT PROC startFUP;
+BEGIN
+-- Start the FUP process:
+NEWPROCESS( fupname,,, MYPID.<0:7>, pid, error, name );
+IF ( error ) THEN
+BEGIN
+sbuf':='"NEWPROCESS( FUP ) error #xxx-xxx" -> @s;
+NUMOUT( s[ -7 ], error.<0:7>, 10, 3 );
+NUMOUT( s[ -3 ], error.<8:15>, 10, 3 );
+WRITE( term, buf, @s'-'@sbuf );
+STOP( pid );
+RETURN 0;
+END;
+
+-- FUP started OK... Now, OPEN the FUP process:
+OPEN( pid, fup );
+FILEINFO( fup, error );
+IF ( error )THEN
+BEGIN
+sbuf':='"OPEN( FUP process ) error #xxx" -> @s;
+NUMOUT( s[ -3 ], error, 10, 3 );
+WRITE( term, buf, @s'-'@sbuf );
+STOP( pid );
+RETURN 0;
+END;
+
+-- Write the startup message to FUP:
+WRITEREAD( fup, su, 66, 100 );
+FILEINFO( fup, error );
+IF ( error ) THEN
+BEGIN
+sbuf':='"WRITEREAD( FUP startup message ) error #xxx" -> @s;
+NUMOUT( s[ -3 ], error, 10, 3 );
+WRITE( term, buf, @s'-'@sbuf );
+STOP( pid );
+RETURN 0;
+END;
+--
+-- Now we close the FUP process file (not strictly necessary, but if we don't,
+-- some processes will wait 30 seconds before proceeding ("standard startup
+-- sequence" requirement), so make it a habit):
+--
+CLOSE( fup );
+
+-- FUP properly started, return OK:
+RETURN ( FUPrunning := -1 );
+END;
+
+?PAGE"Procedure: SYSTEMMESSAGE() - System message received"
+PROC systemmessage;
+--
+-- This procedure only reacts on STOP and/or ABEND messages sent on behalf
+-- of the FUP process that we started (everything else is ignored).
+--
+BEGIN
+-- Is this a stop/abend from our FUP process?
+IF ( NOT ( ( dbuf = -5 OR dbuf = -6 ) AND ( dbuf[ 1 ]'='pid FOR 3 ) ) ) THEN
+! -- No... Ignore the message
+RETURN;
+
+-- Build a log message:
+sbuf':='"FUP " -> @s;
+IF ( dbuf = -5 ) THEN
+s':='"stopp" -> @s
+ELSE
+s':='"abend" -> @s;
+s':='"ed, " -> @s;
+
+-- FUP is no longer running:
+FUPrunning := 0;
+
+-- Was it a STOP message?
+IF ( dbuf = -5 ) THEN
+-- Yes... Probably intentional (no restart):
+RETURN;
+
+-- Successful restart?
+IF ( startFUP() ) THEN
+-- Yes... FUPrunning is true again:
+BEGIN
+s':='"has been restarted" -> @s;
+WRITE( log, buf, ( count := @s'-'@sbuf ) );
+RETURN;
+END;
+
+-- Restart failure, end of story:
+s':='"could not be restarted" -> @s;
+WRITE( log, buf, ( count := @s'-'@sbuf ) );
+RETURN;
+END;
+
+?PAGE"Procedure: INITIALIZE() - Housekeeping chores"
+INT PROC initialize;
+BEGIN
+INT(16)
+myid; -- Slot to hold userid of current user
+
+-- Open home terminal:
+MYTERM( termname );
+OPEN( termname, term );
+FILEINFO( term, error );
+IF ( error ) THEN
+RETURN 0;
+--
+-- Open $RECEIVE nowait with READUPDATE/REPLY (necessary since we wish
+-- to make this process the IN/OUT file for the started FUP process.
+-- A simple READ is sufficient if you have a terminal as IN/OUT file):
+--
+OPEN( receive, recv, 1, 1 );
+FILEINFO( recv, error );
+IF ( error ) THEN
+RETURN 0;
+
+-- Read the startup message:
+READUPDATE( recv, su, $LEN( su ) );
+FILEINFO( recv, error );
+IF ( error ) THEN
+RETURN 0;
+AWAITIO( recv,, count );
+FILEINFO( recv, error );
+IF ( error OR su.msgcode <> -1 ) THEN
+RETURN 0;
+REPLY();
+--
+-- Open the specified log file and position it to EOF (if no OUT file is spe-
+-- cified, default to a spooler collector):
+--
+IF ( NOT FNAMECOMPARE ( su.infile, su.outfile ) ) THEN
+su.outfile':='[ "$S #FUPLOG " ];
+OPEN ( su.outfile, log );
+FILEINFO( recv, error );
+IF ( error ) THEN
+RETURN 0;
+POSITION ( log, -1D );
+FILEINFO( log, error );
+IF ( error ) THEN
+RETURN 0;
+--
+-- Prepare the FUP startup message (put the name of this process into
+-- su.infile and su.outfile):
+--
+GETCRTPID( MYPID, su.infile );
+su.infile[ 4 ]':='" "&su.infile[ 4 ] FOR 7; -- Blank out rest of name
+su.outfile':='su.infile FOR 12;
+
+-- Start the FUP process, return immediately if startup fails:
+IF ( NOT startFUP ) THEN
+RETURN 0;
+
+-- Log who started the front-end process:
+IF ( error := PROCESSINFO( MYPID,, myid ) ) THEN
+-- Should never occur...
+RETURN 0;
+
+sbuf':='"FUP started by user ---" -> @s;
+NUMOUT( s[ -3 ], myid.<0:7>, 10, 3 );
+s':='",---" -> @s;
+NUMOUT( s[ -3 ], myid.<8:15>, 10, 3 );
+s':='", date and time " -> @s;
+@s := DATETIME ( s ); -- Fill in date and time
+WRITE( log, buf, @s'-'@sbuf );
+FILEINFO( log, error );
+IF ( error ) THEN
+RETURN 0;
+
+-- Successful initialization:
+RETURN -1;
+END;
+
+?PAGE"Procedure: TERMINATE() - Normal termination"
+PROC terminate;
+BEGIN
+-- Not strictly necessary (Monitor will close orphaned files):
+CLOSE( recv );
+CLOSE( log );
+CLOSE( term );
+END;
+
+?PAGE"FUP front-end example, main procedure"
+PROC S0001V01_FRONTEND_040429 MAIN;
+BEGIN
+--
+-- Initialize our process and start the FUP "server", abort if we fail:
+--
+IF ( NOT initialize ) THEN
+  abortit();
+--
+-- Monitor $RECEIVE for incoming requests (loop until FUP goes away,
+-- <FUPrunning> will be set to zero on received STOP message or if an ABEND
+-- message is followed by a failed restart):
+--
+WHILE ( FUPrunning ) DO
+BEGIN
+@replybuffer := @dbuf;
+replyerror := replylength := 0;
+READUPDATE( recv, dbuf, 200 );
+AWAITIO( recv,, count );
+FILEINFO( recv, error );
+IF ( error ) THEN
+IF error <> 6 THEN
+BEGIN
+sbuf':='"$RECEIVE READ error #xxx" -> @s;
+NUMOUT ( s[ -3 ], error, 10, 3 );
+WRITE ( term, buf, @s'-'@sbuf );
+abortit;
+END
+ELSE
+systemmessage()
+ELSE
+FUPmessage();
+REPLY( replybuffer, replylength,,, replyerror );
+END;
+
+-- The FUP process is gone - it's time to disappear:
+terminate();
+STOP();
+END; -- PROC S0001V01_FRONTEND_040429() MAIN;

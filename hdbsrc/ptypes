@@ -1,0 +1,235 @@
+?NOLIST
+-------------------------------------------------------------------------------
+--                                                                           --
+--            V E R S I O N   C O N T R O L   C H A N G E   L O G            --
+--                                                                           --
+-- CHG #    DATE     PERSON  DESCRIPTION                                     --
+-- -----  ---------  ------  --------------------------------------------------
+-- XXXXX  01 May 18   HDB    XXXXXX: Initial Version                         --
+-------------------------------------------------------------------------------
+--
+
+
+
+?NOLIST
+?SOURCE $SYSTEM.SYSTEM.EXTDECS1(
+?    INITIALIZER
+?  , PROCESSORTYPE
+?  , PROCESSOR_GETINFOLIST_
+?  , FILE_GETINFO_
+?  , FILE_OPEN_
+?  , FILE_CLOSE_
+?  , PROCESS_DEBUG_
+?  , PROCESS_GETINFO_
+?  , PROCESS_STOP_
+?  , WRITE, WRITEX
+?   ,OPENEDIT_
+?   ,CLOSEEDIT_
+?   ,READEDIT
+?   ,NUMOUT
+?   ,NUMIN
+?)
+?NOLIST
+
+?SYMBOLS
+?INSPECT
+
+
+define       array (x)   = [0:(x-1)]#;
+
+define StringFill(s, f, l) =
+               s[0] ':=' f & s[0] FOR l#;
+
+struct      .PrintBfr;
+begin
+    int          outf;
+    int          fe;
+
+    struct       data;
+    begin
+        int          length;
+        string       text array(1024);
+        int          texti = text;
+    end;
+end;
+
+define       PrintBuffer(x,l) =
+  PrintBfr.data.text[PrintBfr.data.length] ':=' x FOR l & [0];
+  PrintBfr.data.length := stringlen(PrintBfr.data.text[PrintBfr.data.length])#;
+
+define       PrintString(x) =
+  PrintBfr.data.text[PrintBfr.data.length] ':=' x & [0];
+  PrintBfr.data.length := PrintBfr.data.length +
+      stringlen(PrintBfr.data.text[PrintBfr.data.length])#;
+
+
+int proc stringlen(stg, ch) variable;
+string .stg;
+string ch;
+begin
+    string .chPtr;
+    int len := 0;
+    string tch;
+
+    if $PARAM(ch) then
+        tch := ch
+    else
+        tch := 0;
+
+    if tch = 0 then  ! looking for a null; do it the slow way
+    begin
+      while not (stg[len] = 0) do
+        len := len + 1;
+    end
+    else
+    begin
+        SCAN stg UNTIL ch[0] -> @chPtr;
+        if $CARRY then
+            len := -1
+        else
+            len := (@chPtr '-' @stg);
+    end;
+
+    return len;
+end;
+
+
+proc PrintNum(n, b, l) variable;
+int n;
+int b;
+int l;
+begin
+    int base;
+    int len;
+
+    if $PARAM(b) then
+        base := b
+    else
+        base := 10;
+
+    if $PARAM(l) then
+        len := l
+    else
+        len := 6;
+
+    call numout(PrintBfr.data.text[PrintBfr.data.length],
+              n, base, len);
+    PrintBfr.data.length := PrintBfr.data.length+len;
+end;
+
+
+proc PrintOpen;
+begin
+    int rc;
+    int pt;
+    literal filename^max^bytes = 24;
+    string .EXT fname^string[0: filename^max^bytes - 1];
+    int fname^length^bytes := 0;
+
+  ! get home term
+    rc := PROCESS_GETINFO_(
+            ! processhandle !
+          , ! proc-fname: maxlen !
+          , ! proc-fname-len !
+          , ! priority !
+          , ! mom's-processhandle !
+          , fname^string: filename^max^bytes
+          , fname^length^bytes
+        );
+
+  ! Open home terminal for read/write
+    rc := FILE_OPEN_( fname^string:fname^length^bytes, PrintBfr.outf);
+    IF (PrintBfr.outf = -1) THEN ! open attempt failed
+    begin
+        PROCESS_STOP_;
+    end;
+    PrintBfr.data.length := 0;
+end;
+
+proc PrintClose;
+begin
+    call File_Close_ (PrintBfr.outf);
+    PrintBfr.outf := -1;
+    PrintBfr.data.length := 0;
+end;
+
+
+proc PrintFlush;
+begin
+    int(32)      line;
+    int          fe;
+
+    if (PrintBfr.outf < 0) then return;
+
+    call WriteX (PrintBfr.outf, PrintBfr.data.texti, PrintBfr.data.length);
+    fe := File_GetInfo_ (PrintBfr.outf, PrintBfr.fe);
+    PrintBfr.data.length := 0;
+end;
+
+
+
+?page    "FatalExit"
+!******************************************************************************
+!*
+!******************************************************************************
+define      FatalExit(message,error) =
+                begin
+                    PrintString(message);
+                    PrintNum(error);
+                    PrintFlush;
+                    PROCESS_STOP_;
+                end#;
+
+
+?page    "MAIN"
+!******************************************************************************
+!*
+!******************************************************************************
+proc mymain MAIN;
+begin
+    int rc;
+    int pt;
+    int attributes array(3) := [48,49,72];
+    int retLen;
+    int status;
+    int i;
+    int .pinfo array(1024);
+    string .pinfo^;
+    int plen;
+    string .pvalue array(1024);
+
+   INITIALIZER;  ! Throw away startup message
+
+    call PrintOpen;
+
+    rc := PROCESSOR_GETINFOLIST_ ( ! [ nodename:length ] !
+                    , ! [ cpu ] !
+                    , attributes
+                    , $len(attributes) * $occurs(attributes)
+                    , pinfo
+                    , $len(pinfo) * $occurs(pinfo)
+                    , retLen
+                    , status);
+
+    @pinfo^ := @pinfo << 1;
+    for i := 0  to $OCCURS(attributes)-1 do
+    begin
+!       printNum(attributes[i]);
+!       PrintString(": ");
+
+        plen ':=' pinfo^ for 2 bytes;
+        @pinfo^ := @pinfo^ '+' 2;
+        pvalue ':=' pinfo^ for plen;
+        @pinfo^ := ((@pinfo^ '+' plen '+' 1) >> 1) << 1;
+        case attributes[i] of
+        begin
+            48 -> PrintBuffer(pvalue, plen);
+            49 -> PrintBuffer(pvalue, plen);
+            72 -> PrintBuffer(pvalue, plen);
+            otherwise -> PrintBuffer(pvalue, plen);
+        end;
+        PrintFlush;
+    end;
+
+    PROCESS_STOP_;
+end; ! mymain

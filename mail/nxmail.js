@@ -119,7 +119,6 @@ exports.Smtp = class {
 
     return new Promise(function (resolve, reject) {
       try {
-
         self.smtp.sendMail(options, function (error, info) {
           if (error) {
             self._error(`Send ${options} failed with err=${exports.stringify(err)}`);
@@ -357,6 +356,17 @@ exports.Imap = class {
 
           stream.once('end', () => {
             self._trace(`Message end: seq=${seq}`);
+            // Mark the above mails as read
+            msg.once('attributes', function (attrs) {
+              let uid = attrs.uid;
+              self.imap.addFlags(uid, ['\\Seen'], function (err) {
+                if (err) {
+                  console.log(err);
+                } else {
+                  console.log("Marked as read!")
+                }
+              });
+            });
             resolve(buffer);
           });
           self._trace(`Message once.end event message seq=${seq} armed`);
@@ -410,144 +420,143 @@ exports.Imap = class {
         });
         self._trace(`Fetch once.end event armed`);
       } catch (err) {
-        if(err.message === 'Nothing to fetch')
+        if (err.message === 'Nothing to fetch')
           return resolve(emails);
         reject(err);
       }
     });
   }
+}
+
+exports.Imap.parse = function parse(email) {
+  const self = this;
+
+  const content = [];
+  const errors = [];
+  let headers = [];
+  let unknowns = [];
+  let bidValue;
 
 
-  parse(email) {
-    const self = this;
-
-    const content = [];
-    const errors = [];
-    let headers = [];
-    let unknowns = [];
-    let bidValue;
-
-
-    function isHeader(line) {
-      let j, ch;
-      for (j = 0; j < line.length; ++j) {
-        ch = line.charAt(j).toLowerCase();
-        if (!((ch === '-') || (ch === '_') || (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z')))
-          break;
-      }
-      if (j < line.length && ch === ':')
-        return {name: line.slice(0, j), value: line.slice(j + 1).trim()};
-      return undefined;
+  function isHeader(line) {
+    let j, ch;
+    for (j = 0; j < line.length; ++j) {
+      ch = line.charAt(j).toLowerCase();
+      if (!((ch === '-') || (ch === '_') || (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z')))
+        break;
     }
+    if (j < line.length && ch === ':')
+      return {name: line.slice(0, j), value: line.slice(j + 1).trim()};
+    return undefined;
+  }
 
 
-    function getBidValue(header) {
-      try {
-        let bid = header.value;
-        if (exports.nx.isArray(bid))
-          bid = bid.join(' ');
-        let idx = bid.toLowerCase().indexOf('boundary=');
-        if (idx > 0)
-          bidValue = exports.nx.replaceAll(bid.slice(idx + 10), ['=', '"'], ['', '']);
-      } catch (err) {
-        errors.push(`${exports.stringify(header)}\n${err.toString()}`);
-      }
+  function getBidValue(header) {
+    try {
+      let bid = header.value;
+      if (exports.nx.isArray(bid))
+        bid = bid.join(' ');
+      let idx = bid.toLowerCase().indexOf('boundary=');
+      if (idx > 0)
+        bidValue = exports.nx.replaceAll(bid.slice(idx + 10), ['=', '"'], ['', '']);
+    } catch (err) {
+      errors.push(`${exports.stringify(header)}\n${err.toString()}`);
     }
+  }
 
 
-    function collectHeader(lines, i) {
-      for (i = i + 1; i < lines.length; ++i) {
-        line = lines[i];
-        if (line.length === 0)
-          break;      // going into content...
-
-        const h = isHeader(line);
-        if (h || (h && h.name !== header.name)) {
-          if (header.name.toLowerCase().trim() === 'content-type')
-            getBidValue(header);
-          headers.push(header);
-          if ((header = h))
-            return collectHeader(lines, i);
-        }
-        if (!exports.nx.isArray(header.value))
-          header.value = [header.value];
-        header.value.push(line);
-      }
-
-      return i;
-    }
-
-
-    let header, line, i, j;
-    let body = exports.nx.CloneObj(email.body);
-    const lines = body.split('\n').join('').split('\r');
-    for (i = 0; i < lines.length; ++i) {
-      line = lines[i];
-      if (line.length === 0)
-        break;      // going into content...
-
-      header = isHeader(line);
-      if (!header) {
-        unknowns.push(line);
-        continue;
-      }
-
-      i = collectHeader(lines, i);
-      if (lines[i].length === 0)
-        break;      // going into content...
-    }
-
-    if (header) {
-      if (header.name.toLowerCase().trim() === 'content-type')
-        getBidValue(header);
-      headers.push(header);
-      header = undefined;
-    }
-
-    let hdrs = exports.nx.CloneObj(headers);
-    let unks = exports.nx.CloneObj(unknowns);
-    headers = [];
-    unknowns = [];
-    let bid_line;
+  function collectHeader(lines, i) {
     for (i = i + 1; i < lines.length; ++i) {
       line = lines[i];
       if (line.length === 0)
-        continue;   // skip
-
-      if (bidValue && line.indexOf(`=${bidValue}=`) >= 0) {
-        bid_line = line;
-        continue;
-      }
-
-      header = isHeader(line);
-      if (!header) {
-        unknowns.push(line);
-        continue;
-      }
-
-      i = collectHeader(lines, i);
-      if (lines[i].length === 0)
         break;      // going into content...
+
+      const h = isHeader(line);
+      if (h || (h && h.name !== header.name)) {
+        if (header.name.toLowerCase().trim() === 'content-type')
+          getBidValue(header);
+        headers.push(header);
+        if ((header = h))
+          return collectHeader(lines, i);
+      }
+      if (!exports.nx.isArray(header.value))
+        header.value = [header.value];
+      header.value.push(line);
     }
 
-    if (header) {
-      if (header.name.toLowerCase().trim() === 'content-type')
-        getBidValue(header);
-      headers.push(header);
-      header = undefined;
-    }
-
-    content.push({headers: headers, unknowns: unknowns});
-    headers = hdrs;
-    unknowns = unks;
-    return {
-      seq: email.seq,
-      boundary_id: bidValue,
-      headers: headers,
-      content: content,
-      unknowns: unknowns,
-      errors: errors,
-      body: email.body
-    };
+    return i;
   }
+
+
+  let header, line, i, j;
+  let body = exports.nx.CloneObj(email.body);
+  const lines = body.split('\n').join('').split('\r');
+  for (i = 0; i < lines.length; ++i) {
+    line = lines[i];
+    if (line.length === 0)
+      break;      // going into content...
+
+    header = isHeader(line);
+    if (!header) {
+      unknowns.push(line);
+      continue;
+    }
+
+    i = collectHeader(lines, i);
+    if (lines[i].length === 0)
+      break;      // going into content...
+  }
+
+  if (header) {
+    if (header.name.toLowerCase().trim() === 'content-type')
+      getBidValue(header);
+    headers.push(header);
+    header = undefined;
+  }
+
+  let hdrs = exports.nx.CloneObj(headers);
+  let unks = exports.nx.CloneObj(unknowns);
+  headers = [];
+  unknowns = [];
+  let bid_line;
+  for (i = i + 1; i < lines.length; ++i) {
+    line = lines[i];
+    if (line.length === 0)
+      continue;   // skip
+
+    if (bidValue && line.indexOf(`=${bidValue}=`) >= 0) {
+      bid_line = line;
+      continue;
+    }
+
+    header = isHeader(line);
+    if (!header) {
+      unknowns.push(line);
+      continue;
+    }
+
+    i = collectHeader(lines, i);
+    if (lines[i].length === 0)
+      break;      // going into content...
+  }
+
+  if (header) {
+    if (header.name.toLowerCase().trim() === 'content-type')
+      getBidValue(header);
+    headers.push(header);
+    header = undefined;
+  }
+
+  content.push({headers: headers, unknowns: unknowns});
+  headers = hdrs;
+  unknowns = unks;
+  return {
+    seq: email.seq,
+    boundary_id: bidValue,
+    headers: headers,
+    content: content,
+    unknowns: unknowns,
+    errors: errors,
+    body: email.body
+  };
 }

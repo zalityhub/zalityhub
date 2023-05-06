@@ -1,106 +1,163 @@
-const stringify = require('json-stringify-safe');
+exports.Qchat = class {
 
-const nx = require('../util/util.js');
-const Env = nx.getEnv(['chatgpt'], true);
-const ChatConfig = nx.CloneObj(Env.chat_service);
-const davinci = ChatConfig.settings.model_methods.items.davinci;
-const Config = davinci.config;
-const Dialog = davinci.dialog;
+  constructor(main, trace) {
+    const self = this;
+    self.trace = trace;
+
+    self.main = main;
+
+    self.stringify = require('json-stringify-safe');
+    self.nx = require('../util/util.js');
+
+    self.onces = {};
+    self.ons = {};
+
+    self.env = self.nx.getEnv(['chatgpt'], true);
+    self.chatConfig = self.nx.CloneObj(self.env.chat_service);
+    self.davinci = self.chatConfig.settings.model_methods.items.davinci;
+    self.config = self.davinci.config;
+    self.dialog = self.davinci.dialog;
+
+    self._trace(`Constructed: ${self.stringify(self, null, 4)}`);
+  }
+
+  _error(err) {
+    const self = this;
+    self._trace(err);
+    console.error(err);
+  }
+
+  _trace(what) {
+    const self = this;
+    if (!self.trace)
+      return;
+    what = self.nx.CloneObj(what);
+    const stack = new Error().stack.split('\n');
+    stack[0] = what;
+    self.trace.push(stack);
+  }
+
+  do_event(ev) {
+    const self = this;
+    const args = Array.from(arguments).slice(1)[0];
+
+    self._trace(`Event: ${ev.toString()}: args: ${args}`);
+
+    let cb = self.onces[ev];
+    if (cb)
+      delete self.onces[ev];
+    else
+      cb = self.ons[ev];
+
+    if (cb)
+      return cb(args);
+  }
 
 
-function ParseGptResponse(gptResponse) {
-  const response = {json: gptResponse};
+  once(ev, cb) {
+    const self = this;
+    self.onces[ev] = cb;
+    self._trace(`Once event ${ev.toString()} armed`);
+  }
 
-  // extract the response text
-  let json = gptResponse;
-  try {
-    let text = '';
-    if (json.error) {
-      json = json.error;
-      if (json.type && json.message)
-        json = `${json.type.toString()}: ${json.message.toString()}`;
-      else if (json.message)
-        json = json.message.toString();
+  on(ev, cb) {
+    const self = this;
+    self.ons[ev] = cb;
+    self._trace(`On event ${ev.toString()} armed`);
+  }
+
+  parseGptResponse(gptResponse) {
+    const self = this;
+    const response = {json: gptResponse};
+
+    // extract the response text
+    let json = gptResponse;
+    try {
+      let text = '';
+      if (json.error) {
+        json = json.error;
+        if (json.type && json.message)
+          json = `${json.type.toString()}: ${json.message.toString()}`;
+        else if (json.message)
+          json = json.message.toString();
+      }
+      if (json.choices)
+        json = json.choices;
+      if (self.nx.isArray(json)) {
+        for (let i = 0, ilen = json.length; i < ilen; ++i)
+          if (json[i].text)
+            text += `${json[i].text}\n`;
+          else if (json[i].message)
+            text += `${json[i].message.content}\n`;
+      } else
+        text = json.toString();
+      response.text = text.toString().trim();
+    } catch (err) {
+      response.text = self.stringify(gptResponse);
     }
-    if (json.choices)
-      json = json.choices;
-    if (nx.isArray(json)) {
-      for (let i = 0, ilen = json.length; i < ilen; ++i)
-        if (json[i].text)
-          text += `${json[i].text}\n`;
-        else if (json[i].message)
-          text += `${json[i].message.content}\n`;
-    } else
-      text = json.toString();
-    response.text = text.toString().trim();
-  } catch (err) {
-    response.text = stringify(gptResponse);
+
+    return response;
   }
 
-  return response;
-}
 
+  sendquery(question) {
+    const self = this;
 
-function sendquery(question, cb) {
+    delete self.dialog.system;
+    delete self.dialog.user;
 
-  function requester(cb) {
-    Config.headers.Authorization = ChatConfig.settings.model_methods.Authorization;
-    const protocol = require(Config.type);  // http or https
-    const req = protocol.request(Config, (res) => {
-      res.setEncoding('utf8');
-      let body = '';
+    self.dialog.prompt = `assistant: You are a chatbot\nuser: ${question}\n`;
 
-      res.on('data', (chunk) => {
-        body += chunk;
-      });
+    return new Promise(function (resolve, reject) {
+      try {
 
-      res.on('end', () => {
-        delete Config.headers.Authorization;
-        cb(null, ParseGptResponse(JSON.parse(body.toString())));
-      });
+        // get the http request
+
+        self.config.headers.Authorization = self.chatConfig.settings.model_methods.Authorization;
+
+        const protocol = require(self.config.type);  // http or https
+        const req = protocol.request(self.config, (res) => {
+          res.setEncoding('utf8');
+          let body = '';
+
+          res.on('data', (chunk) => {
+            body += chunk;
+          });
+
+          res.on('end', () => {
+            delete self.config.headers.Authorization;
+            resolve(self.parseGptResponse(JSON.parse(body.toString())));
+          });
+
+          req.on('error', (err) => {
+            reject(err);
+          });
+        });
+
+// send the query
+        self.dialog.max_tokens = 3900;
+        req.write(self.stringify(self.dialog));
+        req.end();
+      } catch (err) {
+        reject(err);
+      }
     });
+  }
 
-    req.on('error', (err) => {
-      return cb(err);
+
+  Query(argv) {
+    const self = this;
+
+    return new Promise(function (resolve, reject) {
+      try {
+        self.sendquery(argv).then((result) => {
+          resolve(result);
+        }).catch((err) => {
+          reject(err);
+        });
+      } catch (err) {
+        reject(err);
+      }
     });
-
-    return req;
-  }
-
-
-  delete Dialog.system;
-  delete Dialog.user;
-
-  Dialog.prompt = `assistant: You are a chatbot\nuser: ${question}\n`;
-
-  try {
-
-    // get the http request
-    const req = requester(cb);
-
-// then send it
-    Dialog.max_tokens = 3900;
-    req.write(stringify(Dialog));
-    req.end();
-  } catch (err) {
-    cb(err);
   }
 }
-
-
-function Query(argv, cb) {
-
-  if (!cb)
-    cb = function (err, result) {
-      if (err) return console.error(err.toString());
-      console.log(result.text);
-    };
-
-  while (argv.length) {
-    const q = argv.shift();
-
-    sendquery(q, cb);
-  }
-}
-
-Query(process.argv.slice(2));

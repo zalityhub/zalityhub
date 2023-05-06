@@ -1,0 +1,23 @@
+cc -c sha256c
+cc -c btc
+cc -c utilc
+cc -c cjsonc
+cc -o hdbbin.cap capc utilo
+cc -o hdbbin.cat catc utilo
+cc -o hdbbin.creat creatc utilo
+cc -o hdbbin.detab detabc utilo
+== cc -o hdbbin.ex exc utilo
+cc -o hdbbin.finfo finfoc utilo
+cc -o hdbbin.finger fingerc utilo
+cc -o hdbbin.flat flatc utilo
+cc -o hdbbin.glob globc utilo
+cc -o hdbbin.grep grepc utilo
+cc -o hdbbin.hex hexc utilo
+cc -o hdbbin.lsf lsfc utilo
+cc -o hdbbin.lz lzc utilo
+cc -o hdbbin.od odc utilo
+cc -o hdbbin.sleep sleepc utilo
+cc -o hdbbin.sum sumc utilo
+cc -o hdbbin.sx sxc utilo
+cc -o hdbbin.remove removec utilo
+cc -o hdbbin.xlate xlatec utilo

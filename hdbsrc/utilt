@@ -1,0 +1,900 @@
+?symbols, nomap, nolmap
+
+?nolist, source $system.zsysdefs.zsystal
+?nolist, source $system.system.extdecs1(
+?    initializer
+?  , close
+?  , closeedit_
+?  , createprocessname
+?  , delay
+?  , dnumout
+?  , file_close_
+?  , file_getinfo_
+?  , file_getinfolistbyname_
+?  , fileinfo
+?  , file_open_
+?  , fnamecollapse
+?  , fnameexpand
+?  , mypid
+?  , newprocess
+?  , numin
+?  , numout
+?  , oldfilename_to_filename_
+?  , openedit_
+?  , process_getinfo_
+?  , process_stop_
+?  , read
+?  , readedit
+?  , readx
+?  , write
+?  , writeedit
+?  , writeread
+?  , writex
+?)
+?nolist
+
+
+literal true                    = 1,
+        false                   = 0,
+        lf                      = 12,
+        cr                      = 13;
+
+
+literal   Linebfrsize           = 1024;
+literal   MaxFileNameLen        = zsys^val^len^filename;
+
+define    Array (x)             = [0:(x-1)]#;
+define    sizeof (Array)        = ($occurs (Array) * $len (Array))#;
+
+define    gets        = ':='#;
+define    crlf        = [cr] & [lf]#;
+
+define    MemFill(s, v, l) =
+               s[0] gets v & s[0] for (l-1)#;
+
+
+! File Types
+literal   File^Type^Unstructured    = 1;
+literal   File^Type^Edit            = 2;
+literal   File^Type^Pipe            = 3;
+
+! File Modes
+literal   File^ReadWrite            = 0;
+literal   File^ReadOnly             = 1;
+literal   File^WriteOnly            = 2;
+
+
+struct    FileDef(*);
+begin
+  int        name_i[0:(MaxFileNameLen/2)+2];
+  string     .name_s;
+  int        fn;
+  int        fcode;
+  int        isopen;
+  int        file^type;
+  int        access^mode;
+  int        errno;
+
+! used by file^type = File^Type^Pipe
+  int        pid Array(4);
+  string     .pid_s;
+
+! file buffer
+  int        blen;
+  string     bfr_s Array(1024);
+end;
+
+
+define       WriteLine(file, x, l) =
+  file.bfr_s[file.blen] gets x FOR l & [0];
+  file.blen := file.blen + l;
+  FileFlush(file)#;
+
+define       WriteBuffer(file, x, l) =
+  file.bfr_s[file.blen] gets x FOR l & [0];
+  file.blen := file.blen + l#;
+
+define       WriteString(file, x) =
+   file.bfr_s[file.blen] gets x & [0];
+   file.blen := file.blen + StringLength(file.bfr_s[file.blen])#;
+
+
+struct startup^def(*); !startup message
+begin
+  int    msgcode;
+  struct default;
+  begin
+    int  vol Array(4);
+    int  svol Array(4);
+  end;
+  struct input;
+  begin
+    int  vol Array(4);
+    int  svol Array(4);
+    int  file Array(4);
+  end;
+  struct output;
+  begin
+    int  vol Array(4);
+    int  svol Array(4);
+    int  file Array(4);
+  end;
+
+  string param Array(530);
+end;
+
+
+struct startup^def^s(*); !string version of startup message
+begin
+  int    msgcode;
+  struct default;
+  begin
+    string  vol Array(8);
+    string  svol Array(8);
+  end;
+  struct input;
+  begin
+    string  vol Array(8);
+    string  svol Array(8);
+    string  file Array(8);
+  end;
+  struct output;
+  begin
+    string  vol Array(8);
+    string  svol Array(8);
+    string  file Array(8);
+  end;
+
+  string param Array(530);
+end;
+
+
+struct  .stdin(FileDef);
+struct  .stdout(FileDef);
+struct  .stderr(FileDef);
+struct  .fup(FileDef);
+
+int     startup^msg^len;
+struct  .startup^msg (startup^def);
+struct  .startup^msg^s (startup^def^s);
+
+
+
+!******************************************************************************
+!* Forwards
+!******************************************************************************
+
+define      get^fn^error(fn, errno, string^error) =
+                begin
+                  call file_getinfo_ (fn, errno);
+                  string^error gets "     ";
+                  call dnumout(string^error, $dbl(errno), 10);
+                end;#;
+
+define      get^file^error(file, string^error) =
+              get^fn^error(file.fn, file.errno, string^error)#;
+
+define      FatalExit(message,error) =
+                begin
+                    WriteString(stderr, message);
+                    WriteNum(stderr, error);
+                    FileFlush(stderr);
+                    PROCESS_STOP_;
+                end#;
+
+
+int proc WriteNum(file, num, base, len) Variable;
+  struct  .file(FileDef);
+  int     num;
+  int     base;
+  int     len;
+Forward;
+
+int proc FileFlush(file);
+  struct  .file(FileDef);
+Forward;
+
+
+int proc StringLength(stg, ch) Variable;
+  string .stg;
+  string ch;
+begin
+  string .chptr;
+  int len := 0;
+  string tch;
+
+  if $param(ch) then
+    tch := ch
+  else
+    tch := 0;
+
+  if tch = 0 then  ! looking for a null; do it the slow way
+  begin
+    while not (stg[len] = 0) do
+      len := len + 1;
+  end
+  else begin
+    scan stg until tch -> @chptr;
+    if $carry then
+      len := -1
+    else
+      len := (@chptr '-' @stg);
+  end;
+
+  return len;
+end;
+
+
+int proc StringInString(stg, slen, pattern, plen);
+  string .stg;
+  int    slen;
+  string .pattern;
+  int    plen;
+begin
+  string .ptr;
+  int    off;
+
+  @ptr := @stg;
+  while @ptr <> 0 and slen > 0 do
+  begin
+    scan ptr until pattern[0] -> @ptr;
+    if $carry then
+      @ptr := 0;
+    if @ptr = 0 then
+      return -1;
+    off := (@ptr '-' @stg);
+    if ptr = pattern for plen then
+      return off;
+    @ptr := @stg '+' off;
+  end;
+
+  return -1;
+end;
+
+
+! Broken?
+int proc StringRString(stg, slen, pattern, plen);
+  string .stg;
+  int    slen;
+  string .pattern;
+  int    plen;
+begin
+  string .ptr;
+  int    off;
+
+  @ptr := @stg '+' slen;
+  while @ptr <> 0 and slen > 0 do
+  begin
+    rscan ptr until pattern[0] -> @ptr;
+    if $carry then
+      @ptr := 0;
+    if @ptr = 0 then
+      return -1;
+    off := (@ptr '-' @stg);
+    if ptr = pattern for plen then
+      return off;
+    @ptr := @stg '-' off;
+  end;
+
+  return -1;
+end;
+
+
+int proc HexOut(out, n, l);
+  string .out;
+  int n;
+  int l;
+begin
+  int i;
+  int c;
+  string .tmpptr;
+  string tmp Array(16);
+
+  @tmpptr := @tmp '+' 15;
+  for i := 0 to l-1 do
+  begin
+    c := n.<12:15> + "0";
+    if c > "9" then
+        c := c + 7;
+    @tmpptr := @tmpptr '-' 1;
+    tmpptr := c;
+    n := n >> 4;
+  end;
+
+  n := StringLength(tmpptr);
+  out gets tmpptr for n;
+  return n;
+end;
+
+
+int proc ItoA(i, stg);
+  int     i;
+  string  .stg;
+begin
+  string  .tmp Array(32);
+  string  .ptr;
+  int     neg := 0;
+  int     len;
+
+  if i < 0 then
+  begin
+    neg := 1;
+    i := 0 - i;
+  end;
+
+  call numout(tmp, i, 10, 30);
+  scan tmp while "0" -> @ptr;
+  len := 30-(@ptr '-' @tmp);
+  if neg <> 0 then
+    stg ':=' "-" & ptr for len -> @ptr
+  else
+    stg ':=' ptr for len -> @ptr;
+  ptr[0] := 0;
+
+  return @ptr;
+end;
+
+
+int proc StartupToString(msg, stg);
+  struct .msg(startup^def^s);
+  string .stg;
+begin
+  string .ptr;
+  int    len;
+
+  @ptr := @stg;
+
+  ptr ':=' "msgcode: " -> @ptr;
+  @ptr := ItoA(msg.msgcode, ptr);
+
+  ptr ':=' crlf & "default: " & crlf -> @ptr;
+  len := sizeof(msg.default.vol);
+  ptr ':=' "  vol: " & msg.default.vol for len & crlf -> @ptr;
+  return @ptr;
+end;
+
+
+proc IOError(fn, errno, name, message);
+  int     fn;
+  int     errno;
+  string  .name;
+  string  .message;
+begin
+  string  ec Array(4);
+
+  get^fn^error(fn, errno, ec);
+  WriteBuffer(stderr, message, stringlength(message));
+  WriteString(stderr, ": ");
+  WriteBuffer(stderr, name, StringLength(name));
+  WriteString(stderr, ", error=" & ec for 3);
+  FileFlush(stderr);
+end;
+
+
+int proc GetMyTerm(name, len);
+  string .name;
+  int    len;
+begin
+  int     rc;
+  int     .tname Array(MaxFileNameLen/2);
+  string  .tname_s := @tname '<<' 1;
+  int     flen := 0;
+
+  ! get home term
+  rc := process_getinfo_(
+            ! processhandle !
+          , ! proc-fname: maxlen !
+          , ! proc-fname-len !
+          , ! priority !
+          , ! mom's-processhandle !
+          , tname: sizeof(tname)
+          , flen
+        );
+  if rc <> 0 then
+    FatalExit("process_getinfo_ failed: ", rc);
+  name gets tname_s for flen;
+  return flen;
+end;
+
+
+proc FileInit(file, mode);
+  struct  .file(FileDef);
+  int     mode;
+begin
+  file.fn := -1;
+  file.isopen := 0;
+  file.access^mode := mode;
+  file.errno := 0;
+  file.blen := 0;
+  file.file^type := 0;
+  @file.pid_s := @file.pid '<<' 1;
+  @file.name_s := @file.name_i '<<' 1;
+end;
+
+
+proc FileError(file, message);
+  struct  .file(FileDef);
+  string  .message;
+begin
+  IOError(file.fn, file.errno, file.name_s, message);
+end;
+
+
+int proc FileGetCode(name);
+  string  .name;
+begin
+  string .msg Array(132);
+  int    .finflist[0:0] := [42];
+  int    .finf[0:0];
+  int    finf_len := 0;
+  int    rc;
+
+
+  rc := file_getinfolistbyname_ (name:stringlength(name),
+                                   finflist, sizeof(finflist),
+                                   finf, sizeof(finf),
+                                   finf_len);
+  if finf_len = 0 then
+    finf[0] := -1;
+  return finf;
+end;
+
+
+int proc FileOpen(file, name, mode);
+  struct  .file(FileDef);
+  string  .name;
+  int     mode;
+begin
+  int     rc;
+  int     len;
+
+! Main Proc
+
+  FileInit(file, mode);
+  file.fcode := FileGetCode(name);
+
+! Set defaults
+  file.fn := -1;
+  if file.fcode = 101 then
+    file.file^type := File^Type^Edit
+  else
+    file.file^type := File^Type^Unstructured;
+
+  len := StringLength(name);
+  file.name_s gets name for len;
+  file.name_s[len] := 0;
+
+  if file.file^type = File^Type^Edit then
+    rc := openedit_(file.name_i:len, file.fn, file.access^mode)
+  else
+    rc := file_open_(file.name_s:len, file.fn, file.access^mode);
+
+  if rc <> 0 or file.fn < 0 then
+    FatalExit("open of "
+      & file.name_s for stringlength(file.name_s)
+      & " failed: ", rc);
+
+  file.isopen := 1;
+  return file.fn;
+end;
+
+
+int proc PipeOpen(file, name, mode, debug);
+  struct  .file(FileDef);
+  string  .name;
+  int     mode;
+  int     debug;
+begin
+  struct  .smsg(startup^def);
+  int     .smsg^s(startup^def^s) := @smsg;
+  int     .pname_i Array((MaxFileNameLen/2)+2);
+  int     plen;
+  int     .fname_i Array(12);
+  string  .fname_s := @fname_i '<<' 1;
+  string  ec Array(4);
+  int     rc;
+  int     len;
+  int     rlen;
+  int     pri := 0;
+  string  .sptr;
+
+  FileInit(file, mode);
+  file.file^type := File^Type^Pipe;
+
+! put the given name into an internal file format name
+  len := fnameexpand(name, fname_i, startup^msg.default);
+
+! Create the process
+  len := sizeof(smsg);
+
+  MemFill(smsg, "  ", len/2);        ! space fill
+  smsg^s.msgcode := -1;
+  smsg^s.default.vol   gets "$D2D001";
+  smsg^s.default.svol  gets "HDBSRC";
+  smsg^s.input.vol     gets "$RECEIVE";
+  smsg^s.output.vol    gets startup^msg^s.output.vol
+    for sizeof(smsg^s.output.vol);
+  smsg^s.output.svol   gets startup^msg^s.output.svol
+    for sizeof(smsg^s.output.svol);
+  smsg^s.output.file  gets startup^msg^s.output.file
+    for sizeof(smsg^s.output.file);
+  smsg^s.param         gets sizeof(smsg^s.param) * [0];
+
+  pname_i  gets 12 * ["  "];
+  call createprocessname(pname_i);
+  pname_i[4] gets "#ZSPI   ";
+  call newprocess (fname_i,
+                   debug,,,
+                   file.pid,
+                   rc,
+                   pname_i);
+  if rc.<0:7> <> 0 then
+    begin
+      WriteString(stderr, "New process error ");
+      WriteNum(stderr, rc.<0:7>);
+      if rc.<0:7> = 3 or rc.<0:7> = 8 or rc.<0:7> = 11 then
+        begin
+          WriteString(stderr, ", file management error ");
+          WriteNum(stderr, rc.<8:15>);
+          WriteString(stderr, "on ");
+          WriteBuffer(stderr, name, StringLength(name));
+        end;
+      FileFlush(stderr);
+      return -1;
+    end;
+
+! open the process
+  plen := fnamecollapse(pname_i, file.name_s);
+  file.name_s[plen] := 0;
+  rc := file_open_(file.name_s:plen, file.fn, file.access^mode);
+  if rc <> 0 then
+    begin
+      get^file^error(file, ec);
+      WriteString(stderr, "Unable to open new process ");
+      WriteBuffer(stderr, file.name_s, StringLength(file.name_s));
+      WriteString(stderr, ", error=" & ec for 3);
+      FileFlush(stderr);
+      return -1;
+    end;
+
+! write the startup message
+  sptr := @smsg '<<' 1;
+  len := sizeof(smsg);
+  call writeread(file.fn, smsg, len, len, rlen);
+  if <> then
+    begin
+      rc := file_getinfo_ (file.fn, file.errno);
+      get^file^error(file, ec);
+      WriteString(stderr, "Unable to send startup message, error=" & ec for 3);
+      FileFlush(stderr);
+      return -1;
+    end;
+
+  ! call file_close_(file.fn);
+! re-open the process
+  ! file.fn := -1;
+  ! rc := file_open_(file.name_s:plen, file.fn, file.access^mode);
+  if rc <> 0 then
+    begin
+      get^file^error(file, ec);
+      WriteString(stderr, "Unable to reopen the process ");
+      WriteBuffer(stderr, file.name_s, StringLength(file.name_s));
+      WriteString(stderr, ", error=" & ec for 3);
+      FileFlush(stderr);
+      return -1;
+    end;
+  return file.fn;
+end;
+
+
+proc Fileclose(file);
+  struct  .file(FileDef);
+begin
+
+  if file.file^type = File^Type^Edit then
+    closeedit_(file.fn)
+  else
+    call file_close_ (file.fn);
+  FileInit(file, 0);
+end;
+
+
+int proc WriteNum(file, num, base, len) Variable;
+  struct  .file(FileDef);
+  int     num;
+  int     base;
+  int     len;
+begin
+
+  if Not $PARAM(base) then
+    base := 10;
+
+  if Not $PARAM(len) then
+    len := 6;
+
+  call numout(file.bfr_s[file.blen], num, base, len);
+  file.blen := file.blen+len;
+  return len;
+end;
+
+
+int proc FileWrite(file, bfr, len);
+  struct  .file(FileDef);
+  string  .bfr;
+  int     len;
+begin
+  int     .bfri := @bfr >> 1;
+  string  ec Array(4);
+  int     rc;
+
+  if file.fn < 0 then
+    return -1;  ! not open
+
+  if len <= 0 then
+    return 0;   ! nothing to write
+
+  if file.file^type = File^Type^Edit then
+    call writeedit(file.fn,, bfri, len)
+  else
+    call writex (file.fn, bfri, len);
+
+  rc := file_getinfo_ (file.fn, file.errno);
+  if rc <> 0 then
+    begin
+      get^file^error(file, ec);
+      WriteString(stderr, "Unable to write ");
+      WriteBuffer(stderr, file.name_s, StringLength(file.name_s));
+      WriteString(stderr, ", error=" & ec for 3);
+      FileFlush(stderr);
+      len := -1;
+    end;
+  return len;
+end;
+
+
+int proc FileWriteRead(file, bfr_s, olen, ilen);
+  struct  .file(FileDef);
+  string  .bfr_s;
+  int     olen;
+  int     ilen;
+begin
+  string  ec Array(4);
+  int     rc;
+  int     rlen;
+  int     .bfri := @bfr_s >> 1;
+
+  if file.fn < 0 then
+    return -1;  ! not open
+
+  if olen <= 0 then
+    return 0;   ! nothing to write
+
+  if file.file^type = File^Type^Edit then
+    begin
+      writeString(stderr, "FileWriteRead not allowed on an edit file");
+      FIleFlush(stderr);
+      return -1;
+    end;
+
+  call writeread (file.fn, bfri, olen, ilen, rlen);
+  if <> then
+    begin
+      get^file^error(file, ec);
+      WriteString(stderr, "Unable to write ");
+      WriteBuffer(stderr, file.name_s, StringLength(file.name_s));
+      WriteString(stderr, ", error=" & ec for 3);
+      FileFlush(stderr);
+      rlen := -1;
+    end;
+
+  return rlen;
+end;
+
+
+int proc FileFlush(file);
+  struct  .file(FileDef);
+begin
+  int   blen;
+
+  blen := file.blen;
+  file.blen := 0;
+  return FileWrite(file, file.bfr_s, blen);
+end;
+
+
+int proc FileGet(file, bfr, size);
+  struct  .file(FileDef);
+  string  .bfr;
+  int     size;
+begin
+  string  ec Array(4);
+  int     rc;
+  int     len;
+
+  MemFill(bfr, 0, size);        ! zero fill
+  if file.file^type = File^Type^Edit then
+    rc := readedit(file.fn,
+        !record^number!,        !unspecified
+        bfr,                    !contains text read
+        size-1,                 !length of input buffer
+        len)                    !number of bytes read
+  else
+  begin
+    readx(file.fn, bfr, size-1, len);
+    if <> then
+      rc := FILE_GETINFO_(file.fn, file.errno);
+  end;
+
+  if rc <> 0 and rc <> 1 then
+    begin
+      get^file^error(file, ec);
+      WriteString(stderr, "Unable to readx ");
+      WriteBuffer(stderr, file.name_s, StringLength(file.name_s));
+      WriteString(stderr, ", error=" & ec for 3);
+      FileFlush(stderr);
+      rc := -1;
+    end;
+
+  if rc <> 0 then
+    return -1;
+
+  if len >= 0 then
+    bfr[len] := 0;    ! null terminate
+  return len;
+end;
+
+
+proc StartProcess(name, debug);
+  string  .name;
+  int     debug;
+begin
+  int     rc;
+  string  .cmd Array(1024);
+  int     len := 0;
+
+  WriteString(stdout, "Running: ");
+  WriteBuffer(stdout, name, 32);
+  FileFlush(stdout);
+
+  rc := PipeOpen(fup, name, File^ReadWrite, debug);
+  if rc < 0 then
+    FatalExit("PipeOpen of fup failed: ", rc);
+
+  cmd gets "info" & [cr];
+  len := FileWrite(fup, cmd, 5);
+  ! len := FileWrite(fup, cmd, 5);
+  if len > 0 then
+    WriteLine(stdout, cmd, len);
+  FileFlush(stdout);
+end;
+
+
+proc DoIdle;
+begin
+  call delay(1000D);
+end;
+
+proc DisplayStartUpInfo(message);
+  struct .message(startup^def);
+begin
+  int    opt := 0;
+  int    flen;
+  int    rc;
+  string .name Array(MaxFileNameLen);
+
+  WriteLine(stdout, stdin.name_s, stringlength(stdin.name_s));
+  WriteLine(stdout, stdout.name_s, stringlength(stdout.name_s));
+  WriteLine(stdout, stderr.name_s, stringlength(stderr.name_s));
+end;
+
+proc Start^Up(message, mlen);
+  int .message;
+  int mlen;
+begin
+  int    opt := 0;
+  int    debug := 0;
+  int    flen;
+  int    rc;
+  string .name Array(MaxFileNameLen);
+  string .stg Array(1024);
+
+  ! point the startup message to the startup structure:
+  startup^msg^len := mlen;
+  @startup^msg   := @message;
+  @startup^msg^s := @message;
+
+  ! open stderr using home terminal
+
+  MemFill(name, " ", sizeof(name)); ! space fill
+  flen := GetMyTerm(name, sizeof(name));
+  name[flen] := 0;
+  FileOpen(stderr, name, File^WriteOnly);
+
+  StartupToString(startup^msg, stg);
+  WriteBuffer(stderr, stg, stringlength(stg));
+  FileFlush(stderr);
+
+  ! open the input using the in file from the
+  ! startup message
+
+  MemFill(name, " ", sizeof(name)); ! space fill
+  rc := oldfilename_to_filename_(startup^msg.input,
+                                    name:MaxFileNameLen, flen);
+  name[flen] := 0;
+  FileOpen(stdin, name, File^ReadOnly);
+
+  ! open the output using the out file from the
+  ! startup message
+
+  MemFill(name, " ", sizeof(name)); ! space fill
+  rc := oldfilename_to_filename_(startup^msg.output,
+                                    name:MaxFileNameLen, flen);
+  name[flen] := 0;
+  FileOpen(stdout, name, File^WriteOnly);
+  WriteString(stdout, "Running");
+  FileFlush(stdout);
+
+  DisplayStartUpInfo(startup^msg);
+
+  call numin(startup^msg.param, opt, 10, rc);
+  if opt <> 0 then
+  begin
+    if opt = -1 then
+      debug.<0> := 1;
+    MemFill(name, " ", sizeof(name)); ! space fill
+    name gets "$D2D001.hdbbin.lsf";
+    name gets "$D2D001.hdbsrc.tst";
+    name gets "$system.system.fup";
+    name gets "$SYSTEM.SYS00.TACL";
+    call StartProcess(name, debug);
+  end;
+end;
+
+
+proc Shut^Down;
+begin
+  WriteString(stdout, "Stopping");
+  FileFlush(stdout);
+  Fileclose(stdout);
+  process_stop_;
+end;
+
+
+proc rcv^params(rucb, passthru, message, mlen, match) Variable;
+  int .rucb,
+      .passthru,
+      .message,
+      mlen,
+      match;
+begin
+  WriteString(stdout, "Params");
+  FileFlush(stdout);
+end;
+
+proc rcv^assigns(rucb, passthru, message, mlen, match) Variable;
+  int .rucb,
+      .passthru,
+      .message,
+      mlen,
+      match;
+begin
+  WriteString(stdout, "Assigns");
+  FileFlush(stdout);
+end;
+
+proc rcv^startup(rucb, passthru, message, mlen, match) Variable;
+  int .rucb,
+      .passthru,
+      .message,
+      mlen,
+      match;
+begin
+  call Start^Up(message, mlen);
+end;
+
+
+proc mymain main;
+begin
+  call initializer(!rucb!, !passthru!, rcv^startup, rcv^params, rcv^assigns);
+  call DoIdle;
+end; ! mymain
