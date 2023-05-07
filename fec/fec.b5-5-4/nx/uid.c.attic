@@ -1,0 +1,79 @@
+/*****************************************************************************
+
+Filename:   lib/nx/uid.c
+
+Purpose:    This space for rent.
+
+Maintenance:
+------------------------------------------------------------------------------
+ * $Author: hbray $
+ * $Date: 2011/10/27 18:33:59 $
+ * $Header: /home/hbray/cvsroot/fec/lib/nx/uid.c,v 1.3.4.2 2011/10/27 18:33:59 hbray Exp $
+ *
+ $Log: uid.c,v $
+ Revision 1.3.4.2  2011/10/27 18:33:59  hbray
+ Revision 5.5
+
+ Revision 1.3.4.1  2011/09/24 17:49:48  hbray
+ Revision 5.5
+
+ Revision 1.3  2011/07/27 20:22:19  hbray
+ Merge 5.5.2
+
+ Revision 1.2.2.1  2011/07/27 20:19:48  hbray
+ Added cvs headers
+
+ *
+2009.07.15 harold bray          Created release 4.0
+ *****************************************************************************/
+
+#ident "@(#) $Id: uid.c,v 1.3.4.2 2011/10/27 18:33:59 hbray Exp $ "
+
+
+#include "include/stdapp.h"
+#include "include/libnx.h"
+
+#include "include/spin.h"
+#include "include/uid.h"
+
+
+
+BtNode_t *UidNodeList = NULL;
+
+
+Uid_t*
+UidConstructor(Uid_t *this, char *file, int lno, boolean new, char *spinName)
+{
+	if ( new )
+		this->spin = SpinNewShared(spinName);
+	else
+		this->spin = SpinMapShared(spinName);
+	this->n = 0;
+	return this;
+}
+
+
+void
+UidDestructor(Uid_t *this, char *file, int lno)
+{
+	SpinVerify(this->spin);
+	SpinDelete(this->spin);
+}
+
+
+Json_t*
+UidSerialize(Uid_t *this)
+{
+	UidVerify(this);
+	Json_t *root = JsonNew(__FUNC__);
+
+	return root;
+}
+
+
+char*
+UidToString(Uid_t *this)
+{
+	UidVerify(this);
+	return NxUidToString(this->n);
+}

@@ -1,0 +1,213 @@
+/*****************************************************************************
+
+Filename:   lib/nx/xmlbuilder.c
+
+Purpose:    This space for rent.
+
+Maintenance:
+------------------------------------------------------------------------------
+ * $Author: hbray $
+ * $Date: 2011/10/27 18:33:59 $
+ * $Header: /home/hbray/cvsroot/fec/lib/nx/xmlbuilder.c,v 1.3.4.2 2011/10/27 18:33:59 hbray Exp $
+ *
+ $Log: xmlbuilder.c,v $
+ Revision 1.3.4.2  2011/10/27 18:33:59  hbray
+ Revision 5.5
+
+ Revision 1.3.4.1  2011/09/24 17:49:48  hbray
+ Revision 5.5
+
+ Revision 1.3  2011/07/27 20:22:20  hbray
+ Merge 5.5.2
+
+ Revision 1.2.2.1  2011/07/27 20:19:49  hbray
+ Added cvs headers
+
+ *
+2009.07.15 harold bray          Created release 4.0
+ *****************************************************************************/
+
+#ident "@(#) $Id: xmlbuilder.c,v 1.3.4.2 2011/10/27 18:33:59 hbray Exp $ "
+
+
+#include "include/stdapp.h"
+#include "include/libnx.h"
+
+
+BtNode_t *XmlBuilderNodeList = NULL;
+
+
+XmlBuilder_t*
+XmlBuilderConstructor(XmlBuilder_t *this, char *file, int lno)
+{
+	this->text = StringNew(16);
+	this->openTags = ObjectListNew(ObjectListVarType, "OpenTags");
+	return this;
+}
+
+
+void
+XmlBuilderDestructor(XmlBuilder_t *this, char *file, int lno)
+{
+
+	XmlBuilderVerify(this);
+	ObjectListDelete(this->openTags);
+	StringDelete(this->text);
+}
+
+
+Json_t*
+XmlBuilderSerialize(XmlBuilder_t *this)
+{
+	XmlBuilderVerify(this);
+	Json_t *root = JsonNew(__FUNC__);
+	JsonAddString(root, "Details", ObjectStringStamp(this));
+	return root;
+}
+
+
+char*
+XmlBuilderToString(XmlBuilder_t *this)
+{
+	Json_t *root = XmlBuilderSerialize(this);
+	StringArrayStatic(sa, 16, 32);
+	String_t *out = StringArrayNext(sa);
+	StringSprintf(out, "%s", JsonToString(root));
+	JsonDelete(root);
+	return out->str;
+}
+
+
+char*
+XmlBuilderOpenTagV(XmlBuilder_t *this, char *tag, char *fmt, va_list ap)
+{
+
+	XmlBuilderVerify(this);
+
+	StringSprintfCat(this->text, "<%s>", tag);
+	if ( *fmt != '\0' )
+		StringSprintfCatV(this->text, fmt, ap);
+
+	ObjectListAdd(this->openTags, MemoryStringDup(tag), ObjectListLastPosition);
+	return this->text->str;
+}
+
+
+char*
+XmlBuilderOpenTag(XmlBuilder_t *this, char *tag, char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	return XmlBuilderOpenTagV(this, tag, fmt, ap);
+}
+
+
+int
+XmlBuilderCloseTag(XmlBuilder_t *this)
+{
+
+	XmlBuilderVerify(this);
+
+	if ( ObjectListNbrEntries(this->openTags) <= 0 )
+	{
+		SysLog(LogError, "No open tags");
+		return -1;
+	}
+
+	char *tag = (char*)ObjectListRemove(this->openTags, ObjectListLastPosition);
+	// prune any attributes
+	char *pruned = strdup(tag);
+	char *ptr;
+	if ( (ptr = strchr(pruned, ' ')) != NULL )
+		*ptr = '\0';
+	// Then close the tag
+	StringSprintfCat(this->text, "</%s>", pruned);
+	free(pruned);
+	MemoryDelete(tag);
+	return 0;
+}
+
+
+int
+XmlBuilderCloseAllTags(XmlBuilder_t *this)
+{
+	XmlBuilderVerify(this);
+
+	while ( ObjectListNbrEntries(this->openTags) > 0 )
+		XmlBuilderCloseTag(this);
+
+	return 0;
+}
+
+
+char*
+XmlBuilderAddTagV(XmlBuilder_t *this, char *tag, char *fmt, va_list ap)
+{
+
+	XmlBuilderVerify(this);
+
+	StringSprintfCat(this->text, "<%s>", tag);
+	if ( *fmt != '\0' )
+		StringSprintfCatV(this->text, fmt, ap);
+
+	// prune any attributes
+	char *pruned = strdup(tag);
+	char *ptr;
+	if ( (ptr = strchr(pruned, ' ')) != NULL )
+		*ptr = '\0';
+	// Then close the tag
+	StringSprintfCat(this->text, "</%s>", pruned);
+	free(pruned);
+	return this->text->str;
+}
+
+
+char*
+XmlBuilderAddTag(XmlBuilder_t *this, char *tag, char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	return XmlBuilderAddTagV(this, tag, fmt, ap);
+}
+
+
+char*
+XmlBuilderAddStringV(XmlBuilder_t *this, char *fmt, va_list ap)
+{
+	XmlBuilderVerify(this);
+	StringSprintfCatV(this->text, fmt, ap);
+	return this->text->str;
+}
+
+
+char*
+XmlBuilderAddString(XmlBuilder_t *this, char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	return XmlBuilderAddStringV(this, fmt, ap);
+}
+
+
+char*
+XmlBuilderOpenTitledTable(XmlBuilder_t *this, char *border, char *title)
+{
+	String_t *tb = StringNew(32);
+	StringSprintf(tb, "table border=\"%s\"", border);
+	XmlBuilderOpenTag(this, tb->str, "");
+	XmlBuilderOpenTag(this, "tr", "<td style=\"vertical-align:text-top\">%s</td>", title);
+	XmlBuilderOpenTag(this, "td", "");
+	char *ret = XmlBuilderOpenTag(this, tb->str, "");
+	StringDelete(tb);
+	return ret;
+}
+
+
+void
+XmlBuilderCloseTitledTable(XmlBuilder_t *this)
+{
+	XmlBuilderCloseTag(this);	// close table
+	XmlBuilderCloseTag(this);	// close td
+	XmlBuilderCloseTag(this);	// close tr
+	XmlBuilderCloseTag(this);	// close table
+}

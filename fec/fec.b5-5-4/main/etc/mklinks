@@ -1,0 +1,64 @@
+doit()
+{
+	rm -f $2
+	ln -s $1 $2
+}
+
+rm -f `ls -l|grep '^l' |sed -e's/ ->.*//g' -e's/.* //g'`
+
+if [ "$1" == "clean" ];then		# if cleaning
+	exit 0		# we're done
+fi
+
+# API
+for f in 6000 6001 6002 6003 6004 6005 6006 6007 6008 6009 6010 6011 6012 6013 6014 6015 6016;do
+	echo 6000-api-one.in $f.in
+	doit 6000-api-one.in $f.in
+done
+
+# CAPMS
+for f in 5400 5401 5402 5405 5406 5407 5408;do
+	echo 5400-capms-1.in $f.in
+	doit 5400-capms-1.in $f.in
+done
+
+# GCReq
+for f in 5403;do
+	echo 5403-gcreq-1.in $f.in
+	doit 5403-gcreq-1.in $f.in
+done
+
+# Gxml
+for f in 5104;do
+	echo 5104-gxml-2.in $f.in
+	doit 5104-gxml-2.in $f.in
+done
+
+# Opera
+for f in 5101;do
+	echo 5101-opera-1.in $f.in
+	doit 5101-opera-1.in $f.in
+done
+
+# SDC XML
+for f in 6500 6501 6502 6503 6504 6505 6506 6507 6508;do
+	if [ "$f" == "6508" ];then
+		echo 6500-sdcxml-2.in $f.in
+		doit 6500-sdcxml-2.in $f.in
+	else
+		echo 6500-sdcxml-1.in $f.in
+		doit 6500-sdcxml-1.in $f.in
+	fi
+done
+
+# SVS
+for f in 5600;do
+	echo 5600-svs-1.in $f.in
+	doit 5600-svs-1.in $f.in
+done
+
+# Visak
+for f in 5000 5001;do
+	echo 5000-visak-1.in $f.in
+	doit 5000-visak-1.in $f.in
+done

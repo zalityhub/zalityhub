@@ -12,6 +12,8 @@
 #include <cextdecs>
 #include "zsysc"
 #include <talh>
+#else
+#include <sys/stat.h>
 #endif
 
 #include "leak.h"
@@ -190,6 +192,7 @@ typedef struct FsFileDef
   } _nonstop ;
 
 #else
+  struct stat   finfo;
   FILE          *f;
 #endif
 

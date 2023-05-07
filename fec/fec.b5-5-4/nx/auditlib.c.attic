@@ -1,0 +1,838 @@
+/*****************************************************************************
+
+Filename:   lib/nx/auditlib.c
+
+Purpose:    This space for rent.
+
+Maintenance:
+------------------------------------------------------------------------------
+ * $Author: hbray $
+ * $Date: 2011/10/27 18:33:55 $
+ * $Header: /home/hbray/cvsroot/fec/lib/nx/auditlib.c,v 1.3.4.6 2011/10/27 18:33:55 hbray Exp $
+ *
+ $Log: auditlib.c,v $
+ Revision 1.3.4.6  2011/10/27 18:33:55  hbray
+ Revision 5.5
+
+ Revision 1.3.4.5  2011/09/24 17:49:42  hbray
+ Revision 5.5
+
+ Revision 1.3.4.3  2011/08/23 19:53:59  hbray
+ eliminate fecplugin.h
+
+ Revision 1.3.4.2  2011/08/23 12:03:14  hbray
+ revision 5.5
+
+ Revision 1.3.4.1  2011/08/15 19:12:31  hbray
+ 5.5 revisions
+
+ Revision 1.3  2011/07/27 20:22:17  hbray
+ Merge 5.5.2
+
+ Revision 1.2.2.1  2011/07/27 20:19:44  hbray
+ Added cvs headers
+
+ *
+2009.07.15 harold bray          Created release 4.0
+ *****************************************************************************/
+
+#ident "@(#) $Id: auditlib.c,v 1.3.4.6 2011/10/27 18:33:55 hbray Exp $ "
+
+
+#include "include/stdapp.h"
+#include "include/libnx.h"
+#include "include/parseobj.h"
+
+
+static EnumToStringMap AuditEventStringMap[] =
+{
+	{AuditSystemStarted, "AuditSystemStarted"},
+	{AuditSystemStopped, "AuditSystemStopped"},
+	{AuditSystemWarning, "AuditSystemWarning"},
+	{AuditSystemError, "AuditSystemError"},
+	{AuditCmdInput, "AuditCmdInput"},
+	{AuditCmdResponse, "AuditCmdResponse"},
+	{AuditNxStarted, "AuditNxStarted"},
+	{AuditProcStarted, "AuditProcStarted"},
+	{AuditProcStopped, "AuditProcStopped"},
+	{AuditProcCreated, "AuditProcCreated"},
+	{AuditProcNewState, "AuditProcNewState"},
+	{AuditFsmEvent, "AuditFsmEvent"},
+	{AuditPiException, "AuditPiException"},
+	{AuditPiApiCall, "AuditPiApiCall"},
+	{AuditPiPosSend, "AuditPiPosSend"},
+	{AuditPiPosRecv, "AuditPiPosRecv"},
+	{AuditPiPosReadEnabled, "AuditPiPosReadEnabled"},
+	{AuditPiPosReadDisabled, "AuditPiPosReadDisabled"},
+	{AuditPiHostSend, "AuditPiHostSend"},
+	{AuditPiHostRecv, "AuditPiHostRecv"},
+	{AuditWorkerSend, "AuditWorkerSend"},
+	{AuditWorkerRecv, "AuditWorkerRecv"},
+	{AuditStratusConnect, "AuditStratusConnect"},
+	{AuditStratusDisconnect, "AuditStratusDisconnect"},
+	{AuditStratusProxyOnline, "AuditStratusProxyOnline"},
+	{AuditStratusProxyOffline, "AuditStratusProxyOffline"},
+	{AuditStratusProxySend, "AuditStratusProxySend"},
+	{AuditStratusProxyRecv, "AuditStratusProxyRecv"},
+	{AuditT70Connect, "AuditT70Connect"},
+	{AuditT70Disconnect, "AuditT70Disconnect"},
+	{AuditT70ProxyOnline, "AuditT70ProxyOnline"},
+	{AuditT70ProxyOffline, "AuditT70ProxyOffline"},
+	{AuditT70ProxySend, "AuditT70ProxySend"},
+	{AuditT70ProxyRecv, "AuditT70ProxyRecv"},
+	{AuditHostConnect, "AuditHostConnect"},
+	{AuditHostDisconnect, "AuditHostDisconnect"},
+	{AuditHostConfigStart, "AuditHostConfigStart"},
+	{AuditHostConfigComplete, "AuditHostConfigComplete"},
+	{AuditHostSend, "AuditHostSend"},
+	{AuditHostRecv, "AuditHostRecv"},
+	{AuditHostPingRecv, "AuditHostPingRecv"},
+	{AuditPosConnect, "AuditPosConnect"},
+	{AuditPosForwardSend, "AuditPosForwardSend"},
+	{AuditPosForwardReceived, "AuditPosForwardReceived"},
+	{AuditPosDisconnect, "AuditPosDisconnect"},
+	{AuditPosSend, "AuditPosSend"},
+	{AuditPosRecv, "AuditPosRecv"},
+	{AuditStartService, "AuditStartService"},
+	{AuditSignalSent, "AuditSignalSent"},
+	{AuditSignalRecv, "AuditSignalRecv"},
+	{-1, NULL}
+};
+
+
+// Local Functions
+
+static void AuditRebuildEnabledEvents(Audit_t *this);
+
+
+
+// Local Object Functions
+
+#define AuditConnectionNew() ObjectNew(AuditConnection)
+#define AuditConnectionVerify(var) ObjectVerify(AuditConnection, var)
+#define AuditConnectionDelete(var) ObjectDelete(AuditConnection, var)
+
+static AuditConnection_t* AuditConnectionConstructor(AuditConnection_t *this, char *file, int lno);
+static void AuditConnectionDestructor(AuditConnection_t *this, char *file, int lno);
+static char* AuditConnectionToString(AuditConnection_t *this);
+static Json_t* AuditConnectionSerialize(AuditConnection_t *this);
+
+static int AuditConnectionSieze(AuditConnection_t *this, NxClient_t *client);
+static int AuditConnectionSend(AuditConnection_t *this, AuditEvent_t event, char *bfr, int blen);
+static struct AuditFilter_t* AuditConnectionNewFilter(AuditConnection_t *this, AuditEvent_t event, char *filterText, String_t *response);
+static void AuditConnectionEventHandler(EventFile_t *evf, EventPollMask_t pollMask, void * farg);
+
+
+#define AuditFilterNew() ObjectNew(AuditFilter)
+#define AuditFilterVerify(var) ObjectVerify(AuditFilter, var)
+#define AuditFilterDelete(var) ObjectDelete(AuditFilter, var)
+
+static AuditFilter_t* AuditFilterConstructor(AuditFilter_t *this, char *file, int lno);
+static void AuditFilterDestructor(AuditFilter_t *this, char *file, int lno);
+static char* AuditFilterToString(AuditFilter_t *this);
+static Json_t* AuditFilterSerialize(AuditFilter_t *this);
+
+static int AuditFilterCompile(AuditFilter_t *this, char *expression, String_t *response);
+static int AuditFilterExecute(AuditFilter_t *this, char *target);
+
+
+Audit_t*
+AuditConstructor(Audit_t *this, char *file, int lno)
+{
+
+	NxGlobal->inAudit = true;	// prevent recursive entry
+
+	this->auditConnections = HashMapNew(FD_SETSIZE, "AuditConnections");
+
+	// set system exception file name
+	sprintf(NxGlobal->auditExceptionFilePath, "%s_audit.log", NxGlobal->name);
+
+// save any current file
+	{
+		if ( access(NxGlobal->auditExceptionFilePath, W_OK) == 0 )
+		{
+			char name[BUFSIZ];
+			sprintf(name, "%s_audit", NxGlobal->name);
+			if ( NxLogFileBackup(NxGlobal, name) != 0 )
+				SysLog(LogError, "NxLogFileBackup failed");
+		}
+	}
+
+	NxGlobal->inAudit = false;
+	return this;
+}
+
+
+void
+AuditDestructor(Audit_t *this, char *file, int lno)
+{
+	HashClear(this->auditConnections, false);	// delete all connections
+	HashMapDelete(this->auditConnections);
+}
+
+
+Json_t*
+AuditSerialize(Audit_t *this)
+{
+	AuditVerify(this);
+	Json_t *root = JsonNew(__FUNC__);
+
+	return root;
+}
+
+
+char*
+AuditToString(Audit_t *this)
+{
+	AuditVerify(this);
+	return ObjectStringStamp(this);
+}
+
+
+static void
+AuditRebuildEnabledEvents(Audit_t *this)
+{
+
+	AuditVerify(this);
+
+// Set the composite to false
+	memset(this->enableList, 0, sizeof(this->enableList));
+
+// fold each connection into the composite audit settings
+
+	for (HashEntry_t *entry = NULL; (entry = HashGetNextEntry(this->auditConnections, entry)) != NULL;)
+	{
+		AuditConnection_t *connection = (AuditConnection_t *)entry->var;
+
+		for (int ev = (int)(AuditFirst) + 1; ev < AuditLast; ++ev)
+			this->enableList[ev] |= connection->enableList[ev];
+	}
+}
+
+
+AuditXml_t*
+_AuditFormatEvent(Audit_t *this, AuditEvent_t event, char *file, int lno, const char *fnc, void *data, int len, void **nv, int npairs)
+{
+
+	AuditVerify(this);
+
+	// Create the auditXml buffer
+	AuditXml_t *auditXml = AuditXmlNew();
+	auditXml->event = event;
+	String_t *xml = auditXml->xml;
+
+	// Open the tag
+	char *eventString = AuditEventToString(event);
+
+	StringSprintf(xml, "<event ev=\"%s\" fm=\"%s\" ti=\"%llu\" ", eventString, NxCurrentProc->name, NxGetTime());
+
+	// Insert standard values: pid, filename, lno and functionname
+
+	StringSprintfCat(xml, "pi=\"%d\" ", getpid());
+	StringSprintfCat(xml, "fi=\"%s\" ", file);
+	StringSprintfCat(xml, "ln=\"%d\" ", lno);
+	StringSprintfCat(xml, "fc=\"%s\" ", fnc);
+
+	_StringSprintfPairs(xml, nv, npairs); // add the passed pair values
+
+	if ( data != NULL && len > 0 )		// include data payload?
+		StringSprintfCat(xml, ">\n<![CDATA[%s]]>\n</event>\n", EncodeCdataCharacters(data, len)); // End the tag with data
+	else // End the tag
+		StringSprintfCat(xml, "/>\n");
+
+	return auditXml;
+}
+
+
+int
+_AuditSendEvent(Audit_t *this, AuditEvent_t event, char *file, int lno, const char *fnc, void *data, int len, void **nv, int npairs)
+{
+
+	AuditVerify(this);
+	AuditXml_t *auditXml = _AuditFormatEvent(this, event, file, lno, fnc, data, len, nv, npairs);
+	_AuditSendXml(this, auditXml);
+	AuditXmlDelete(auditXml);
+	return 0;
+}
+
+
+int
+_AuditWriteSessionError(Audit_t *this, AuditXml_t *auditXml)
+{
+
+	boolean force = false;
+
+	AuditVerify(this);
+	AuditXmlVerify(auditXml);
+
+	struct stat auditStat;
+	if ( stat(NxGlobal->auditExceptionFilePath, &auditStat) == 0 )
+	{
+		if ( auditStat.st_ino != this->auditStat.st_ino )
+			force = true;
+	}
+
+	time_t tod = time (NULL);
+	struct tm *ts = localtime (&tod);
+
+// if date has changed or no file is open
+	if ( force || ts->tm_yday != this->auditDay || this->auditFd <= 0 )
+	{
+		this->auditDay = ts->tm_yday;
+
+		if ( this->auditFd != 0 )
+			(void)close(this->auditFd);
+
+// Backup the current file
+		if ( access(NxGlobal->auditExceptionFilePath, W_OK) == 0 )
+		{
+			char name[BUFSIZ];
+			sprintf(name, "%s_audit", NxGlobal->name);
+		
+			if ( NxLogFileBackup(NxGlobal, name) != 0 )
+				SysLog(LogError, "NxLogFileBackup failed");
+		}
+
+// open new file
+		if ((this->auditFd = open(NxGlobal->auditExceptionFilePath, O_CREAT | O_WRONLY | O_APPEND, 0666)) < 0)
+			SysLog(LogError, "Unable to open %s: %s", NxGlobal->auditExceptionFilePath, ErrnoToString(errno));
+	if (chmod(NxGlobal->auditExceptionFilePath, 0666) < 0)
+		SysLog(LogWarn, "chmod() error=%s: {%s}", ErrnoToString(errno), NxGlobal->auditExceptionFilePath);
+
+		if ( this->auditFd > 0 )
+			fstat(this->auditFd, &this->auditStat);		// grab file stats
+	}
+
+	if ( this->auditFd > 0 )
+	{
+		char *xml = AuditXmlToString(auditXml);
+		int xlen = strlen(xml);
+
+		if ( FileLock(this->auditFd, true) )
+		{
+			SysLog(LogError, "Unable to get a lock on %s", NxGlobal->auditExceptionFilePath);
+		}
+		else
+		{
+			if ( write(this->auditFd, xml, xlen) != xlen )
+			{
+				SysLog(LogError, "write to %s failed: %s", NxGlobal->auditExceptionFilePath, ErrnoToString(errno));
+			
+				if ( FileUnlock(this->auditFd) )
+					SysLog(LogError, "Unable to remove lock on %s", NxGlobal->auditExceptionFilePath);
+				close(this->auditFd);
+				this->auditFd = 0;
+				return -1;
+			}
+		
+			if ( FileUnlock(this->auditFd) )
+				SysLog(LogError, "Unable to remove lock on %s", NxGlobal->auditExceptionFilePath);
+		}
+	}
+
+	return 0;
+}
+
+
+int
+_AuditSendXml(Audit_t *this, AuditXml_t *auditXml)
+{
+
+	AuditVerify(this);
+	AuditXmlVerify(auditXml);
+
+	if ( NxGlobal->inAudit )
+		return 0;					// recursion
+
+	NxGlobal->inAudit = true;
+
+	// the audit string
+	char *xml = AuditXmlToString(auditXml);
+	int xlen = strlen(xml);
+
+// Send the audit message to each connection
+	ObjectList_t *failedList = ObjectListNew(ObjectListVarType, "FailedList");
+
+	for (HashEntry_t *entry = NULL; (entry = HashGetNextEntry(AuditGlobal->auditConnections, entry)) != NULL;)
+	{
+		AuditConnection_t *connection = (AuditConnection_t *)entry->var;
+
+		if (!connection->enableList[auditXml->event])
+			continue;			// skip
+
+		int len = AuditConnectionSend(connection, auditXml->event, xml, xlen);
+
+		if (len != xlen && len != 0)
+		{
+			SysLog(LogError, "AuditConnectionSend failed");
+			ObjectListAdd(failedList, connection, ObjectListLastPosition);
+		}
+	}
+
+	for(;;)
+	{		// disconnect any failed connections
+		AuditConnection_t *failed = ObjectListRemove(failedList, ObjectListFirstPosition);
+		if ( failed == NULL )
+			break;			// done
+		HashDeleteUid(AuditGlobal->auditConnections, NxClientGetUid(failed->client));
+		AuditConnectionDelete(failed);
+	}
+
+	ObjectListDelete(failedList);
+
+	NxGlobal->inAudit = false;
+	return 0;
+}
+
+
+AuditConnection_t *
+_AuditEnableEventMonitor(Audit_t *this, Parser_t *parser, NxClient_t *client, String_t *response)
+{
+
+	AuditVerify(this);
+	NxClientVerify(client);
+
+	StringSprintfCat(response, "<Audit>\n");
+
+	ParserNormalizeInput(parser);
+
+	char *word = ParserGetNextToken(parser, " ");
+
+	if (word == NULL || strlen(word) <= 0)
+	{
+		char tmp[1024];
+		sprintf(tmp, "No audit options");
+		SysLog(LogError, tmp);
+		StringSprintfCat(response, "%s\n", tmp);
+		return NULL;			// no input?
+	}
+
+	AuditConnection_t *connection = AuditConnectionNew();
+
+	char *nextWord = NULL;
+	do
+	{
+		word = strdup(word);	// need a copy (ParserGetNextToken overwrites)
+
+		nextWord = ParserGetNextToken(parser, " ");
+		int nextEv = AuditEventToVal(nextWord);
+
+		if (stricmp(word, "all") == 0)
+		{
+			for (int ev = ((int)AuditFirst) + 1; ev < AuditLast; ++ev)	// set them all
+			{
+				if (strlen(nextWord) > 0 && stricmp(nextWord, "all") != 0 && nextEv == 0xdeadbeef)	// next word is unknown, treat it as filter criteria
+				{
+					AuditFilter_t *filter = AuditConnectionNewFilter(connection, ev, nextWord, response);
+					if ( filter == NULL )
+					{
+						AuditConnectionDelete(connection);
+						return NULL;		// filter error
+					}
+
+					char tmp[1024];
+					sprintf(tmp, "%s filter criteria set to %s", AuditEventToString(ev), nextWord);
+					SysLog(LogDebug, tmp);
+					StringSprintfCat(response, "%s\n", tmp);
+				}
+				else
+				{
+					StringSprintfCat(response, "%s enabled\n", AuditEventToString(ev));
+				}
+
+				connection->enableList[ev] = true;
+			}
+
+			// need to skip this word
+			nextWord = ParserGetNextToken(parser, " ");
+			nextEv = AuditEventToVal(nextWord);
+		}
+		else
+		{
+			int ev = AuditEventToVal(word);
+
+			if (ev == 0xdeadbeef)
+			{
+				char tmp[1024];
+				sprintf(tmp, "Audit event %s is invalid", word);
+				SysLog(LogError, tmp);
+				StringSprintfCat(response, "%s\n", tmp);
+				AuditConnectionDelete(connection);
+				return NULL;
+			}
+
+			if (strlen(nextWord) > 0 && stricmp(nextWord, "all") != 0 && nextEv == 0xdeadbeef)	// next word is unknown, treat it as filter criteria
+			{
+				AuditFilter_t *filter = AuditConnectionNewFilter(connection, ev, nextWord, response);
+				if ( filter == NULL )
+				{
+					AuditConnectionDelete(connection);
+					return NULL;		// filter error
+				}
+
+				char tmp[1024];
+				sprintf(tmp, "%s filter criteria set to %s", word, nextWord);
+				SysLog(LogDebug, tmp);
+				StringSprintfCat(response, "%s\n", tmp);
+
+				// need to skip this word
+				nextWord = ParserGetNextToken(parser, " ");
+				nextEv = AuditEventToVal(nextWord);
+			}
+			connection->enableList[ev] = true;
+		}
+
+		StringSprintfCat(response, "%s enabled\n", word);
+
+		free(word);				// let go
+	} while ((word = nextWord) != NULL && strlen(word) > 0);
+
+
+// Everything fine; sieze this connection
+
+	if (AuditConnectionSieze(connection, client) != 0)
+	{
+		char tmp[1024];
+		sprintf(tmp, "AuditConnectionSieze failed");
+		SysLog(LogError, tmp);
+		StringSprintfCat(response, "%s\n", tmp);
+		AuditConnectionDelete(connection);
+		return NULL;
+	}
+
+	if (ProcCmdSendResponse(NxCurrentProc, client, 0, response->str, strlen(response->str)) < 0)
+		SysLog(LogError, "ProcCmdSendResponse failed");
+
+	AuditRebuildEnabledEvents(this);
+	return connection;
+}
+
+
+static AuditConnection_t*
+AuditConnectionConstructor(AuditConnection_t *this, char *file, int lno)
+{
+
+	NxGlobal->inAudit = true;	// prevent recursive entry
+
+	this->auditFilterList = HashMapNew(128, "AuditFilterList");
+
+	this->proc = NxCurrentProc;
+
+	NxGlobal->inAudit = false;
+	return this;
+}
+
+
+static void
+AuditConnectionDestructor(AuditConnection_t *this, char *file, int lno)
+{
+
+	AuditConnectionVerify(this);
+
+	HashClear(this->auditFilterList, false);	// delete each filter
+	HashMapDelete(this->auditFilterList);
+
+// release this connection
+	if ( this->client != NULL )
+	{
+		NxClientVerify(this->client);
+		HashEntry_t *entry;
+		if ((entry = HashFindUid(AuditGlobal->auditConnections, NxClientGetUid(this->client))) != NULL)
+			HashDeleteUid(AuditGlobal->auditConnections, NxClientGetUid(this->client));
+		NxClientDelete(this->client);
+	}
+
+	AuditRebuildEnabledEvents(AuditGlobal);
+}
+
+
+static Json_t*
+AuditConnectionSerialize(AuditConnection_t *this)
+{
+	AuditConnectionVerify(this);
+	Json_t *root = JsonNew(__FUNC__);
+
+	return root;
+}
+
+
+static char*
+AuditConnectionToString(AuditConnection_t *this)
+{
+	AuditConnectionVerify(this);
+	return ObjectStringStamp(this);
+}
+
+
+static AuditFilter_t*
+AuditConnectionNewFilter(AuditConnection_t *this, AuditEvent_t event, char *filterText, String_t *response)
+{
+
+	AuditConnectionVerify(this);
+	AuditFilter_t *filter = AuditFilterNew();
+	filter->connection = this;
+
+	if (AuditFilterCompile(filter, filterText, response) != 0)
+	{
+		AuditFilterDelete(filter);
+		return NULL;		// filter error
+	}
+
+	if (HashFindUINT32(this->auditFilterList, event) != NULL)
+		HashDeleteUINT32(this->auditFilterList, event);
+	HashAddUINT32(this->auditFilterList, event, filter);
+	return filter;
+}
+
+
+static int
+AuditConnectionSieze(AuditConnection_t *this, NxClient_t *client)
+{
+
+	AuditConnectionVerify(this);
+	NxClientVerify(client);
+
+	if ( (this->client = NxClientSiezeConnection(client)) == NULL )
+	{
+		SysLog(LogError, "NxClientSiezeConnection of %s failed", NxClientUidToString(client));
+		return -1;
+	}
+
+	if (NxClientSetEventMask(this->client, EventFileLowPri, EventReadMask, AuditConnectionEventHandler, this) < 0)
+		SysLog(LogFatal, "NxClientSetEventMask failed: %s", NxClientNameToString(this->client));
+
+// add this connection
+	if (HashAddUid(AuditGlobal->auditConnections, NxClientGetUid(this->client), this) == NULL)
+	{
+		SysLog(LogError, "HashAddUid %s failed", NxClientGetUid(this->client));
+		return -1;
+	}
+
+	SysLog(LogDebug, "Connection %s acquired", NxClientNameToString(this->client));
+	return 0;
+}
+
+
+static int
+AuditConnectionSend(AuditConnection_t *this, AuditEvent_t event, char *bfr, int blen)
+{
+
+// Filter against optional audit criteria
+// No match; don't send
+
+	if (HashMapLength(this->auditFilterList) > 0)
+	{
+		int rc = 1;
+		HashEntry_t *e2;
+
+		if ((e2 = HashFindUINT32(this->auditFilterList, event)) != NULL)
+		{
+			char *tmp = malloc(blen + 1);
+			memcpy(tmp, bfr, blen);
+			AuditFilter_t *filter = (AuditFilter_t *)e2->var;
+			rc = AuditFilterExecute(filter, tmp);
+			free(tmp);
+		}
+
+		if (rc != 0 && e2 != NULL)
+		{
+			// no match; uncook the data and try that...
+			{
+				int uncookLen;
+				char *uncook = DecodeUrlCharacters(bfr, &uncookLen);
+				char *tmp = malloc(uncookLen + 1);
+				memcpy(tmp, uncook, uncookLen);
+				AuditFilter_t *filter = (AuditFilter_t *)e2->var;
+				rc = AuditFilterExecute(filter, tmp);
+				free(tmp);
+			}
+			if (rc != 0)
+				return 0;		// no match; 
+		}
+	}
+
+	if (NxClientSendPkt(this->client, bfr, blen) != blen)
+	{
+		SysLog(LogError, "NxClientSendPkt failed");
+		return -1;
+	}
+
+	return blen;
+}
+
+
+static AuditFilter_t*
+AuditFilterConstructor(AuditFilter_t *this, char *file, int lno)
+{
+	return this;
+}
+
+
+static void
+AuditFilterDestructor(AuditFilter_t *this, char *file, int lno)
+{
+
+	if (this->compiled)
+		regfree(&this->regex);
+}
+
+
+static Json_t*
+AuditFilterSerialize(AuditFilter_t *this)
+{
+	AuditFilterVerify(this);
+	Json_t *root = JsonNew(__FUNC__);
+
+	return root;
+}
+
+
+static char*
+AuditFilterToString(AuditFilter_t *this)
+{
+	AuditFilterVerify(this);
+	return ObjectStringStamp(this);
+}
+
+
+static int
+AuditFilterCompile(AuditFilter_t *this, char *expression, String_t *response)
+{
+
+	AuditFilterVerify(this);
+
+	if (this->compiled)
+		regfree(&this->regex);
+
+	int rc = regcomp(&this->regex, expression, REG_EXTENDED | REG_NOSUB);	// Compile the regular expression 
+
+	if (rc < 0)
+	{
+		char tmp[1024];
+		regerror(rc, &this->regex, tmp, sizeof(tmp));
+		StringSprintfCat(response, "regcomp failed: %s", tmp);
+		SysLog(LogError, tmp);
+		StringSprintfCat(response, "%s\n", tmp);
+		regfree(&this->regex);
+		return -1;
+	}
+
+	this->compiled = true;
+	return 0;
+}
+
+
+static int
+AuditFilterExecute(AuditFilter_t *this, char *target)
+{
+
+	AuditFilterVerify(this);
+
+	int rc = regexec(&this->regex, target, 0, 0, 0);
+
+	return rc;
+}
+
+
+static void
+AuditConnectionEventHandler(EventFile_t *evf, EventPollMask_t pollMask, void * farg)
+{
+	AuditConnection_t *connection = (AuditConnection_t *)farg;
+	AuditConnectionVerify(connection);
+
+	// any event is an automatic disconnect
+	SysLog(LogDebug, "Disconnecting %s", NxClientNameToString(connection->client));
+	AuditConnectionDelete(connection);
+}
+
+
+AuditEvent_t
+AuditEventToVal(char *event)
+{
+	AuditEvent_t v = EnumMapStringToVal(AuditEventStringMap, event, "Audit");
+
+	return v;
+}
+
+
+char *
+AuditEventToString(AuditEvent_t event)
+{
+	StringArrayStatic(sa, 16, 32);
+	char *text = EnumMapValToString(AuditEventStringMap, event);
+
+	if (text == NULL)
+	{
+		text = StringArrayNext(sa)->str;
+		sprintf(text, "AuditEvent_%d", (int)event);
+	}
+
+	if (strncmp(text, "Audit", 5) == 0)
+		text += 5;
+	return text;
+}
+
+
+AuditXml_t*
+AuditXmlConstructor(AuditXml_t *this, char *file, int lno)
+{
+	this->xml = StringNew(128);
+	time(&this->dateCreated);
+	return this;
+}
+
+
+void
+AuditXmlDestructor(AuditXml_t *this, char *file, int lno)
+{
+	StringDelete(this->xml);
+}
+
+
+Json_t*
+AuditXmlSerialize(AuditXml_t *this)
+{
+	AuditXmlVerify(this);
+	Json_t *root = JsonNew(__FUNC__);
+
+	return root;
+}
+
+
+char*
+AuditXmlToString(AuditXml_t *this)
+{
+	AuditXmlVerify(this);
+	return this->xml->str;
+}
+
+
+AuditCounts_t*
+AuditCountsConstructor(AuditCounts_t *this, char *file, int lno)
+{
+	return this;
+}
+
+
+void
+AuditCountsDestructor(AuditCounts_t *this, char *file, int lno)
+{
+}
+
+
+Json_t*
+AuditCountsSerialize(AuditCounts_t *this)
+{
+	AuditCountsVerify(this);
+	Json_t *root = JsonNew(__FUNC__);
+
+	return root;
+}
+
+
+char*
+AuditCountsToString(AuditCounts_t *this)
+{
+	AuditCountsVerify(this);
+	return ObjectStringStamp(this);
+}

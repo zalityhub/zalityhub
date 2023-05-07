@@ -1,0 +1,570 @@
+<!--
+	Common Settings
+-->
+
+<Fec>
+	<Common>
+		<Platform Name="fec"/>
+		<Platform AuditSessions="no"/>
+
+<!--
+	State Machine Options
+-->
+		<Root ConfigFileName="config.shm"/>
+		<Root MinNbrWorkers="10"/>
+		<Root ShutdownWaitTime="60"/>
+		<Root ConfigTTL="60"/>
+
+		<Service HostAddr="0.0.0.0"/>
+		<Worker CheckForStalls="yes" MaxHostWaitTime="60" MaxPosWaitTime="60" ReplyTTL="60" ShutdownWaitTime="60"/>
+
+<!--
+	Proxy Options
+-->
+		<AuthProxy Enabled="yes" HostAddr="0.0.0.0" HostPort="7777" InputQueue="AuthProxy/receive"/>
+		<AuthProxy ContextSize="1000" ContextAgeInterval="10"/>
+		<EdcProxy Enabled="yes" HostAddr="0.0.0.0" HostPort="7779" InputQueue="EdcProxy/receive"/>
+		<EdcProxy ContextSize="1000" ContextAgeInterval="10"/>
+		<T70Proxy Enabled="no" InputQueue="T70Proxy/receive" HostAddr="${T70Sim/HostAddr}" HostPort="${T70Sim/HostPort}"/>
+
+<!--
+	Web Options
+-->
+		<Web Enabled="no" Clone="yes" HostAddr="0.0.0.0" HostPort="9080"/>
+
+<!--
+	Sim Options
+-->
+		<AuthSim Enabled="no" HostAddr="127.0.0.1" HostPort="7777"/>
+		<EdcSim Enabled="no" HostAddr="127.0.0.1" HostPort="7779"/>
+		<T70Sim Enabled="no" HostAddr="0.0.0.0" HostPort="1070"/>
+		<PosSim ResponseTimeout="30" Inflights="1"/>
+
+<!--
+	Service Options
+-->
+		<Service_btr InputEntityEncoding="url"/>
+		<Service_btr OutputEntityEncoding="none"/>
+
+		<Service_pcard InputEntityEncoding="url"/>
+		<Service_pcard OutputEntityEncoding="none"/>
+
+		<Service_sdcxml OutputFinalEot="no"/>
+		<Service_sdcxml InputEntityEncoding="none"/>
+		<Service_sdcxml OutputEntityEncoding="none"/>
+
+        <Service_opera XmlHeaderRequired="no"/>
+
+		<Platform OclAddr="127.0.0.1" OclPort="00000"/>
+	</Common>
+
+
+<!--
+	Largo Dev 229
+-->
+	<rhlinux-5-devel>
+		<Platform sysname="Largo Dev 229"/>
+		<Platform sysid="229"/>
+		<Web Enabled="yes"/>
+	</rhlinux-5-devel>
+
+
+<!--
+	Knx Dev Fec1
+-->
+	<spdknxfec01>
+		<Platform DebugFatal="no"/>
+		<Platform sysname="Knx Dev Fec1"/>
+		<Platform sysid="KD1"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+
+		<Platform TcpPortOffset="10000"/>
+
+		<SysLog Doublespace="yes"/>
+
+		<SysLog Level="LogWarn"/>
+		<SysLog Level="LogDebug"/>
+
+		<Root MinNbrWorkers="1"/>
+		<Worker CheckForStalls="no"/>
+
+		<Web Enabled="yes" Clone="no"/>
+		<T70Proxy Enabled="no" InputQueue="T70Proxy/receive" HostAddr="10.165.3.197" HostPort="9000"/>
+		<AuthSim Enabled="yes" HostAddr="127.0.0.1" HostPort="7777"/>
+		<EdcSim Enabled="yes" HostAddr="127.0.0.1" HostPort="7779"/>
+
+<!--
+	Debug Options
+-->
+		<Root MemoryLeakDetect="yes"/>
+		<Root Debug="no"/>
+		<AuthProxy Debug="no"/>
+		<EdcProxy Debug="no"/>
+		<T70Proxy Debug="no"/>
+		<Service Debug="no"/>
+		<Worker Debug="no"/>
+		<AuthSim Deadman="0"/>
+		<AuthSim Debug="no"/>
+		<EdcSim Deadman="0"/>
+		<EdcSim Debug="no"/>
+		<Web Debug="no"/>
+		<Service_sdcxml.6501 Debug="no"/>
+
+		<AuthProxy Killtime="0"/>
+		<EdcProxy Killtime="0"/>
+		<Service Killtime="0"/>
+		<Worker Killtime="0"/>
+
+		<Service_api Persistent="no"/>
+		<PosSim_api  Persistent="no"/>
+		<PosSim_api Inflights="1"/>
+		<Service_api.6000 PosSim="yes"/>
+		<Service_api.6001 PosSim="yes"/>
+		<Service_api.6002 PosSim="yes"/>
+		<Service_api.6003 PosSim="yes"/>
+		<Service_api.6004 PosSim="yes"/>
+		<Service_api.6005 PosSim="yes"/>
+		<Service_api.6006 PosSim="yes"/>
+		<Service_api.6007 PosSim="yes"/>
+		<Service_api.6008 PosSim="yes"/>
+		<Service_api.6009 PosSim="yes"/>
+		<Service_api.6010 PosSim="yes"/>
+		<Service_api.6011 PosSim="yes"/>
+		<Service_api.6012 PosSim="yes"/>
+		<Service_api.6013 PosSim="yes"/>
+		<Service_api.6014 PosSim="yes"/>
+		<Service_api.6015 PosSim="yes"/>
+		<Service_api.6016 PosSim="yes"/>
+
+<!--
+		<Service_capms.5400 PosSim="yes"/>
+		<Service_capms.5401 PosSim="yes"/>
+		<Service_capms.5402 PosSim="yes"/>
+		<Service_capms.5403 PosSim="yes"/>
+		<Service_capms.5405 PosSim="yes"/>
+		<Service_capms.5406 PosSim="yes"/>
+		<Service_capms.5407 PosSim="yes"/>
+		<Service_capms.5408 PosSim="yes"/>
+
+		<Service_gcreq.5403 PosSim="yes"/>
+
+		<Service_gxml.5104 PosSim="yes"/>
+
+		<Service_opera.5101 PosSim="yes"/>
+
+		<Service_sdcxml.6500 PosSim="yes"/>
+		<Service_sdcxml.6501 PosSim="yes"/>
+		<Service_sdcxml.6502 PosSim="yes"/>
+		<Service_sdcxml.6503 PosSim="yes"/>
+		<Service_sdcxml.6504 PosSim="yes"/>
+		<Service_sdcxml.6505 PosSim="yes"/>
+		<Service_sdcxml.6506 PosSim="yes"/>
+		<Service_sdcxml.6507 PosSim="yes"/>
+		<Service_sdcxml.6508 PosSim="yes"/>
+
+		<Service_svs.5600 PosSim="yes"/>
+
+		<Service_visak.5000 PosSim="yes"/>
+		<Service_visak.5001 PosSim="yes"/>
+-->
+	</spdknxfec01>
+
+
+<!--
+	Knx Dev Fec2
+-->
+	<spdknxfec02>
+		<Platform sysname="Knx Dev Fec2"/>
+		<Platform sysid="KD2"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="no" InputQueue="T70Proxy/receive" HostAddr="10.165.3.197" HostPort="9000"/>
+	</spdknxfec02>
+
+
+<!--
+	Denver Dev Fec1
+-->
+	<sdendfec01>
+		<Platform DebugFatal="no"/>
+		<Platform sysname="Den Dev Fec1"/>
+		<Platform sysid="DD1"/>
+
+		<Platform TcpPortOffset="0"/>
+
+		<SysLog Doublespace="yes"/>
+
+		<SysLog Level="LogDebug"/>
+
+		<Root MinNbrWorkers="1"/>
+		<Worker CheckForStalls="no"/>
+
+		<Web Enabled="yes" Clone="no"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.165.3.197" HostPort="9000"/>
+		<AuthSim Enabled="yes" HostAddr="127.0.0.1" HostPort="7777"/>
+		<EdcSim Enabled="yes" HostAddr="127.0.0.1" HostPort="7779"/>
+
+<!--
+	Debug Options
+-->
+		<Root Debug="no"/>
+		<Root MemoryLeakDetect="yes"/>
+		<AuthProxy Debug="no"/>
+		<EdcProxy Debug="no"/>
+		<T70Proxy Debug="no"/>
+		<Service Debug="no"/>
+		<Worker Debug="no"/>
+		<AuthSim Deadman="0"/>
+		<AuthSim Debug="no"/>
+		<EdcSim Deadman="0"/>
+		<EdcSim Debug="no"/>
+		<Web Debug="no"/>
+
+		<AuthProxy Killtime="0"/>
+		<EdcProxy Killtime="0"/>
+		<Service Killtime="0"/>
+		<Worker Killtime="0"/>
+
+<!--
+		<Service_api Persistent="no"/>
+		<PosSim_api  Persistent="no"/>
+		<PosSim_api Inflights="1"/>
+		<Service_api.6000 PosSim="yes"/>
+		<Service_api.6001 PosSim="yes"/>
+		<Service_api.6002 PosSim="yes"/>
+		<Service_api.6003 PosSim="yes"/>
+		<Service_api.6004 PosSim="yes"/>
+		<Service_api.6005 PosSim="yes"/>
+		<Service_api.6006 PosSim="yes"/>
+		<Service_api.6007 PosSim="yes"/>
+		<Service_api.6008 PosSim="yes"/>
+		<Service_api.6009 PosSim="yes"/>
+		<Service_api.6010 PosSim="yes"/>
+		<Service_api.6011 PosSim="yes"/>
+		<Service_api.6012 PosSim="yes"/>
+		<Service_api.6013 PosSim="yes"/>
+		<Service_api.6014 PosSim="yes"/>
+		<Service_api.6015 PosSim="yes"/>
+		<Service_api.6016 PosSim="yes"/>
+
+		<Service_capms.5400 PosSim="yes"/>
+		<Service_capms.5401 PosSim="yes"/>
+		<Service_capms.5402 PosSim="yes"/>
+		<Service_capms.5403 PosSim="yes"/>
+		<Service_capms.5405 PosSim="yes"/>
+		<Service_capms.5406 PosSim="yes"/>
+		<Service_capms.5407 PosSim="yes"/>
+		<Service_capms.5408 PosSim="yes"/>
+
+		<Service_gcreq.5403 PosSim="yes"/>
+
+		<Service_gxml.5104 PosSim="yes"/>
+
+		<Service_opera.5101 PosSim="yes"/>
+
+		<Service_sdcxml.6500 PosSim="yes"/>
+		<Service_sdcxml.6501 PosSim="yes"/>
+		<Service_sdcxml.6502 PosSim="yes"/>
+		<Service_sdcxml.6503 PosSim="yes"/>
+		<Service_sdcxml.6504 PosSim="yes"/>
+		<Service_sdcxml.6505 PosSim="yes"/>
+		<Service_sdcxml.6506 PosSim="yes"/>
+		<Service_sdcxml.6507 PosSim="yes"/>
+		<Service_sdcxml.6508 PosSim="yes"/>
+
+		<Service_svs.5600 PosSim="yes"/>
+
+		<Service_visak.5000 PosSim="yes"/>
+		<Service_visak.5001 PosSim="yes"/>
+-->
+	</sdendfec01>
+
+
+<!--
+	Denver Dev Fec2
+-->
+	<sdendfec02>
+		<Platform sysname="Denver Dev Fec2"/>
+		<Platform sysid="DD2"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.165.3.197" HostPort="9000"/>
+	</sdendfec02>
+
+
+<!--
+	Denver Dev Fec3
+-->
+	<sdendfec03>
+		<Platform sysname="Denver Dev Fec3"/>
+		<Platform sysid="DD3"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.165.3.197" HostPort="9000"/>
+	</sdendfec03>
+
+
+<!--
+	Denver QA Fec1
+-->
+	<sdenqfec01>
+		<Platform sysname="Denver QA Fec1"/>
+		<Platform sysid="DQ1"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.164.77.152" HostPort="9000"/>
+	</sdenqfec01>
+
+
+<!--
+	Denver QA Fec2
+-->
+	<sdenqfec02>
+		<Platform sysname="Denver QA Fec2"/>
+		<Platform sysid="DQ2"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.164.77.152" HostPort="9000"/>
+	</sdenqfec02>
+
+
+<!--
+	Denver QA Fec3
+-->
+	<sdenqfec03>
+		<Platform sysname="Denver QA Fec3"/>
+		<Platform sysid="DQ3"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.164.77.152" HostPort="9000"/>
+	</sdenqfec03>
+
+
+<!--
+	Atlanta QA Fec1
+-->
+	<spqatlfec01>
+		<Platform sysname="Atlanta QA Fec1"/>
+		<Platform sysid="AQ1"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.164.77.152" HostPort="9000"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+	</spqatlfec01>
+
+
+<!--
+	Atlanta QA Fec2
+-->
+	<spqatlfec02>
+		<Platform sysname="Atlanta QA Fec2"/>
+		<Platform sysid="AQ2"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.164.77.152" HostPort="9000"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+	</spqatlfec02>
+
+
+<!--
+	Knx QA Fec1
+-->
+	<spqknxfec01>
+		<Platform sysname="Knx QA Fec1"/>
+		<Platform sysid="KQ1"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.164.77.152" HostPort="9000"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+	</spqknxfec01>
+
+
+<!--
+	Knx QA Fec2
+-->
+	<spqknxfec02>
+		<Platform sysname="Knx QA Fec2"/>
+		<Platform sysid="KQ2"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.164.77.152" HostPort="9000"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+	</spqknxfec02>
+
+
+<!--
+	Knx UAT Fec1
+-->
+	<spuknxfec01>
+		<Platform sysname="Knx UAT Fec1"/>
+		<Platform sysid="KU1"/>
+		<Web Enabled="yes"/>
+		<T70Proxy Enabled="yes" InputQueue="T70Proxy/receive" HostAddr="10.164.77.152" HostPort="9000"/>
+		<Nat From="198.203.192.21" To="10.164.62.21"/>
+	</spuknxfec01>
+
+
+<!--
+	ATL Prod Fec1
+-->
+	<sppatlfec01>
+		<Platform sysname="ATL Prod Fec1"/>
+		<Platform sysid="AP1"/>
+	</sppatlfec01>
+
+
+<!--
+	ATL Prod Fec2
+-->
+	<sppatlfec02>
+		<Platform sysname="ATL Prod Fec2"/>
+		<Platform sysid="AP2"/>
+	</sppatlfec02>
+
+
+<!--
+	ATL Prod Fec3
+-->
+	<sppatlfec03>
+		<Platform sysname="ATL Prod Fec3"/>
+		<Platform sysid="AP3"/>
+	</sppatlfec03>
+
+
+<!--
+	KNX Prod Fec1
+-->
+	<sppknxfec01>
+		<Platform sysname="KNX Prod Fec1"/>
+		<Platform sysid="KP1"/>
+	</sppknxfec01>
+
+
+<!--
+	KNX Prod Fec2
+-->
+	<sppknxfec02>
+		<Platform sysname="KNX Prod Fec2"/>
+		<Platform sysid="KP2"/>
+	</sppknxfec02>
+
+
+<!--
+	KNX Prod Fec3
+-->
+	<sppknxfec03>
+		<Platform sysname="KNX Prod Fec3"/>
+		<Platform sysid="KP3"/>
+	</sppknxfec03>
+
+
+<!--
+	Centos VM
+-->
+	<centos>
+		<Platform DebugFatal="no"/>
+		<Platform sysname="Centos VM"/>
+		<Platform sysid="CV1"/>
+
+		<Platform TcpPortOffset="10000"/>
+
+		<SysLog Doublespace="yes"/>
+
+		<SysLog Level="LogWarn"/>
+		<SysLog Level="LogDebug"/>
+
+		<Root MinNbrWorkers="1"/>
+		<Worker CheckForStalls="no"/>
+
+		<Web Enabled="yes" Clone="no"/>
+		<T70Proxy Enabled="no" InputQueue="T70Proxy/receive" HostAddr="10.165.3.197" HostPort="9000"/>
+		<AuthSim Enabled="yes" HostAddr="127.0.0.1" HostPort="7777"/>
+		<EdcSim Enabled="yes" HostAddr="127.0.0.1" HostPort="7779"/>
+
+<!--
+	Debug Options
+-->
+		<Root MemoryLeakDetect="yes"/>
+		<Root Debug="no"/>
+		<AuthProxy Debug="no"/>
+		<EdcProxy Debug="no"/>
+		<T70Proxy Debug="no"/>
+		<Service Debug="no"/>
+		<Worker Debug="no"/>
+		<AuthSim Deadman="0"/>
+		<AuthSim Debug="no"/>
+		<EdcSim Deadman="0"/>
+		<EdcSim Debug="no"/>
+		<Web Debug="no"/>
+		<Service_sdcxml.6501 Debug="no"/>
+
+		<AuthProxy Killtime="0"/>
+		<EdcProxy Killtime="0"/>
+		<Service Killtime="0"/>
+		<Worker Killtime="0"/>
+
+		<Service_api Persistent="no"/>
+		<PosSim_api  Persistent="no"/>
+		<PosSim_api Inflights="1"/>
+		<Service_api.6000 PosSim="yes"/>
+		<Service_api.6001 PosSim="yes"/>
+		<Service_api.6002 PosSim="yes"/>
+		<Service_api.6003 PosSim="yes"/>
+		<Service_api.6004 PosSim="yes"/>
+		<Service_api.6005 PosSim="yes"/>
+		<Service_api.6006 PosSim="yes"/>
+		<Service_api.6007 PosSim="yes"/>
+		<Service_api.6008 PosSim="yes"/>
+		<Service_api.6009 PosSim="yes"/>
+		<Service_api.6010 PosSim="yes"/>
+		<Service_api.6011 PosSim="yes"/>
+		<Service_api.6012 PosSim="yes"/>
+		<Service_api.6013 PosSim="yes"/>
+		<Service_api.6014 PosSim="yes"/>
+		<Service_api.6015 PosSim="yes"/>
+		<Service_api.6016 PosSim="yes"/>
+
+<!--
+		<Service_capms.5400 PosSim="yes"/>
+		<Service_capms.5401 PosSim="yes"/>
+		<Service_capms.5402 PosSim="yes"/>
+		<Service_capms.5403 PosSim="yes"/>
+		<Service_capms.5405 PosSim="yes"/>
+		<Service_capms.5406 PosSim="yes"/>
+		<Service_capms.5407 PosSim="yes"/>
+		<Service_capms.5408 PosSim="yes"/>
+
+		<Service_gcreq.5403 PosSim="yes"/>
+
+		<Service_gxml.5104 PosSim="yes"/>
+
+		<Service_opera.5101 PosSim="yes"/>
+
+		<Service_sdcxml.6500 PosSim="yes"/>
+		<Service_sdcxml.6501 PosSim="yes"/>
+		<Service_sdcxml.6502 PosSim="yes"/>
+		<Service_sdcxml.6503 PosSim="yes"/>
+		<Service_sdcxml.6504 PosSim="yes"/>
+		<Service_sdcxml.6505 PosSim="yes"/>
+		<Service_sdcxml.6506 PosSim="yes"/>
+		<Service_sdcxml.6507 PosSim="yes"/>
+		<Service_sdcxml.6508 PosSim="yes"/>
+
+		<Service_svs.5600 PosSim="yes"/>
+
+		<Service_visak.5000 PosSim="yes"/>
+		<Service_visak.5001 PosSim="yes"/>
+-->
+	</centos>
+
+<!--
+	Fedora VM1
+-->
+	<localhost>
+		<Platform sysname="Fedora VM"/>
+		<Platform sysid="FV1"/>
+	</localhost>
+
+
+<!--
+	Fedora VM2
+-->
+	<fedora>
+		<Platform sysname="Fedora VM"/>
+		<Platform sysid="FV2"/>
+	</fedora>
+
+</Fec>

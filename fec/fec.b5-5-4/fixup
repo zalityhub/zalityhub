@@ -1,0 +1,1 @@
+vim `grep -l '^[A-Z,a-z].*ToString(' *.c`

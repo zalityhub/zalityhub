@@ -14,14 +14,21 @@
 typedef struct FileDef
 {
   char       *filename;
+#if _NONSTOP
   FsFileInfoDef finfo;
+#else
+  #include <sys/stat.h>
+  struct stat   finfo;
+#endif
 } FileDef ;
 
 typedef struct LsDef
 {
+#if _NONSTOP
   short optCode;
   short optUser;
   short optGroup;
+#endif
   short optFname;
   short optBrief;
   short optHuman;
@@ -30,8 +37,11 @@ typedef struct LsDef
   short optTime;
   short optSize;
   short optRev;
+#if _NONSTOP
   long long optNewer;
-
+#else
+  time_t    optNewer;
+#endif
   int        nSorted;
   FileDef    **sorted;
 } LsDef ;
@@ -107,8 +117,11 @@ LsCmpModifyTime(const void* a, const void* b)
   long long *bv;
   long long r;
 
+#if _NONSTOP
   av = (long long*)(*(FileDef**)a)->finfo.modifyTime;
   bv = (long long*)(*(FileDef**)b)->finfo.modifyTime;
+#else
+#endif
   r = (*bv - *av);
   if( r == 0 )
     return 0;
@@ -125,8 +138,11 @@ LsCmpModifyTimeRev(const void* a, const void* b)
   long long *bv;
   long long r;
 
+#if _NONSTOP
   av = (long long*)(*(FileDef**)a)->finfo.modifyTime;
   bv = (long long*)(*(FileDef**)b)->finfo.modifyTime;
+#else
+#endif
   r = (*av - *bv);
   if( r == 0 )
     return 0;
@@ -143,8 +159,11 @@ LsCmpSizeRev(const void* a, const void* b)
   uint32_t  bv;
   int       r;
 
+#if _NONSTOP
   av = (uint32_t)(*(FileDef**)a)->finfo.eof;
   bv = (uint32_t)(*(FileDef**)b)->finfo.eof;
+#else
+#endif
   r = (int)(bv - av);
   if( r == 0 )
     return 0;
@@ -161,8 +180,11 @@ LsCmpSize(const void* a, const void* b)
   uint32_t  bv;
   int       r;
 
+#if _NONSTOP
   av = (uint32_t)(*(FileDef**)a)->finfo.eof;
   bv = (uint32_t)(*(FileDef**)b)->finfo.eof;
+#else
+#endif
   r = (int)(av - bv);
   if( r == 0 )
     return 0;
@@ -202,25 +224,33 @@ static int
 SvFile(char *filename, void *entry, void *cbarg)
 {
   LsDef *def = (LsDef*)cbarg;
+#if _NONSTOP
   FsFileInfoDef *finfo = (FsFileInfoDef*)entry;
+#else
+  struct stat *finfo = (struct stat*)entry;
+#endif
 
+#if _NONSTOP
   if( def->optCode >= 0 && def->optCode != finfo->fileCode )
     return 0;    // filter by fileCode
 
   if( def->optUser && def->optUser != finfo->owner.owner[1] )
     return 0;    // filter by User
 
-  if( def->optExclude ) {
-    for(char **tmp = def->optExclude; *tmp; ++tmp)
-      if( stristr(filename, *tmp) )
-        return 0;    // filter by text
-  }
-
   if( def->optGroup && def->optGroup != finfo->owner.owner[0] )
     return 0;    // filter by Group
 
   if( def->optNewer && def->optNewer > (*((long long*)finfo->modifyTime)) )
       return 0;    // filter by modify time
+#else
+  if( def->optNewer && def->optNewer > finfo->st_mtime )
+      return 0;    // filter by modify time
+#endif
+  if( def->optExclude ) {
+    for(char **tmp = def->optExclude; *tmp; ++tmp)
+      if( stristr(filename, *tmp) )
+        return 0;    // filter by text
+  }
 
 // save this file
 
@@ -236,38 +266,47 @@ SvFile(char *filename, void *entry, void *cbarg)
 }
 
 static char*
-FormatEof(LsDef *def, FileDef *file)
+FormatSize(LsDef *def, FileDef *file)
 {
   static char tmp[32];
+
+  long st_size;
+
+#if _NONSTOP
   FsFileInfoDef *finfo = &file->finfo;
+  st_size = finfo->eof;
+#else
+  struct stat *finfo = &file->finfo;
+  st_size = finfo->st_size;
+#endif
 
   if( ! def->optHuman ) {
-    sprintf(tmp, "%12d", finfo->eof);
+    sprintf(tmp, "%12d", st_size);
     return tmp;
   }
 
   uint32_t g, m, k;
   char     *suffix = "";
-  double   d = (double)finfo->eof;
+  double   d = (double)st_size;
 
   k = 1024;
   m = k * 1024;
   g = m * 1024;
 
-  if( (finfo->eof / g) ) {    // gb range
+  if( (st_size / g) ) {    // gb range
     strcpy(tmp, ftoa(d / (double)g, NULL));
     suffix = "g";
   }
-  else if( (finfo->eof / m) ) {    // gb range
+  else if( (st_size / m) ) {    // gb range
     strcpy(tmp, ftoa(d / (double)m, NULL));
     suffix = "m";
   }
-  else if( (finfo->eof / k) ) {    // gb range
+  else if( (st_size / k) ) {    // gb range
     strcpy(tmp, ftoa(d / (double)k, NULL));
     suffix = "k";
   }
   else {
-    sprintf(tmp, "%12d", finfo->eof);
+    sprintf(tmp, "%12d", st_size);
   }
 
   if(strchr(tmp, '.'))
@@ -289,6 +328,7 @@ FormatFname(LsDef *def, FileDef *file)
   return UtilBaseName(file->filename);
 }
 
+#if _NONSTOP
 static char*
 FormatUserid(LsDef *def, FileDef *file)
 {
@@ -309,10 +349,12 @@ FormatUserid(LsDef *def, FileDef *file)
     sprintf(tmp, "%3d,%-3d", finfo->owner.owner[0], finfo->owner.owner[1]);
   return tmp;
 }
+#endif
 
 static int
 LsFile(LsDef *def, FileDef *file)
 {
+#if _NONSTOP
   static char *mons[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
     // [0] The Gregorian year (1984, 1985, ...)
     // [1] The Gregorian month (1-12)
@@ -332,7 +374,7 @@ LsFile(LsDef *def, FileDef *file)
      // format: 114 2022-09-30 15:11 test
 
     printf("%12.12s %4d-%02d-%02d %02d:%02d %s\n",
-           FormatEof(def, file),
+           FormatSize(def, file),
            greg[0], greg[1], greg[2], greg[3], greg[4],
            FormatFname(def, file));
   } else if( def->optFname || def->optPath == 1) {
@@ -342,7 +384,7 @@ LsFile(LsDef *def, FileDef *file)
       printf("%-26.26s  %4d  %12.12s %02d%s%04d %02d:%02d %s %s\n",
         ToUpper(FormatFname(def, file)),
         finfo->fileCode,
-        FormatEof(def, file),
+        FormatSize(def, file),
         greg[2],  // day
         (greg[1] <= 0 || greg[1] > 12) ? "???" : mons[greg[1]-1],
         greg[0],
@@ -354,7 +396,7 @@ LsFile(LsDef *def, FileDef *file)
       printf("%-8.8s      %4d     %12.12s %02d%s%04d %02d:%02d %s %s\n",
         ToUpper(FormatFname(def, file)),
         finfo->fileCode,
-        FormatEof(def, file),
+        FormatSize(def, file),
         greg[2],  // day
         (greg[1] <= 0 || greg[1] > 12) ? "???" : mons[greg[1]-1],
         greg[0],
@@ -364,6 +406,7 @@ LsFile(LsDef *def, FileDef *file)
         FsGetFilePerissions(finfo->security));
     }
   }
+#endif
 
   return 0;
 }
@@ -387,7 +430,9 @@ main(int argc, char *argv[])
   char ch;
   char  **tmp;
   char *date;
+#if _NONSTOP
   GregorianTimeDef greg;
+#endif
   LsDef def;
 
   Moi = UtilBaseName(argv[0]);
@@ -462,6 +507,7 @@ main(int argc, char *argv[])
           if(strlen(date) != 8)
             Usage("-n: Invalid format '%s': yyyymmdd required\n", date);
 
+#if _NONSTOP
           memset(&greg, 0, sizeof(greg));
           ch = date[4];
           date[4] = '\0';
@@ -484,6 +530,7 @@ main(int argc, char *argv[])
           def.optNewer = COMPUTETIMESTAMP(greg.u.int16, &error);
           if(error)
             Usage("-n: Invalid format in '%s': error %d\n", date, error);
+#endif
 
           --argc;
           ++argv;

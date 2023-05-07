@@ -1,0 +1,226 @@
+<!--
+	Common Settings
+-->
+
+<Nx>
+	<Common>
+<!--
+	Platform Options
+-->
+		<Platform DisplayThisConfig="yes"/>
+
+		<Platform PidFileName="${Platform/Name}.pid"/>
+		<Platform DbName="${Platform/Name}.sqlite"/>
+		<Platform TcpPortOffset="0"/>
+
+		<Platform IgnoreIp="10.164.218.193 10.164.218.194 10.164.222.193 10.164.222.194 10.164.244.1 10.164.244.2 10.164.245.1 10.164.245.2 10.164.67.131 10.164.77.244 172.24.0.2 172.25.0.3 198.203.191.116 198.203.191.26 198.203.191.35 198.203.191.36 198.203.191.37 198.203.191.39 198.203.191.46 198.203.192.203 198.203.192.206 198.203.192.211 198.203.192.213 198.203.192.214 198.203.192.215 198.203.192.251 198.203.192.253"/>
+		<Platform CmdTrustedIp="127.0.0.1 0.0.0.0" CmdMaxTime="5M"/>
+
+		<Platform MaxFd="1000"/>
+		<Platform DebugFatal="no"/>
+		<Platform MemoryLeakDetect="no"/>
+
+		<Platform OclThrottleTime="500"/>
+		<SysLog Level="LogWarn" MaxFileSize="1000M" MaxFileTime="12H" Doublespace="no" JsonFormat="no"/>
+		<SysLog RecycleTimer="60"/>
+		<TraceLog Addr="127.0.0.1" Port="9500"/>
+	</Common>
+
+
+<!--
+	Largo Dev 229
+-->
+	<rhlinux-5-devel>
+		<Platform OclAddr="10.164.67.134" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</rhlinux-5-devel>
+
+
+<!--
+	Knx Dev Fec1
+-->
+	<spdknxfec01>
+		<Platform OclAddr="10.164.4.94" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</spdknxfec01>
+
+
+<!--
+	Denver Dev Fec1
+-->
+	<sdendfec01>
+		<Platform OclAddr="10.164.67.134" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</sdendfec01>
+
+
+<!--
+	Denver Dev Fec2
+-->
+	<sdendfec02>
+		<Platform OclAddr="10.164.67.134" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</sdendfec02>
+
+
+<!--
+	Denver Dev Fec3
+-->
+	<sdendfec03>
+		<Platform OclAddr="10.164.67.134" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</sdendfec03>
+
+
+<!--
+	Denver QA Fec1
+-->
+	<sdenqfec01>
+		<Platform OclAddr="10.164.67.137" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</sdenqfec01>
+
+
+<!--
+	Denver QA Fec2
+-->
+	<sdenqfec02>
+		<Platform OclAddr="10.164.67.137" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</sdenqfec02>
+
+
+<!--
+	Denver QA Fec3
+-->
+	<sdenqfec03>
+		<Platform OclAddr="10.164.67.137" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</sdenqfec03>
+
+
+<!--
+	Atlanta QA Fec1
+-->
+	<spqatlfec01>
+		<Platform OclAddr="10.164.145.95" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</spqatlfec01>
+
+
+<!--
+	Atlanta QA Fec2
+-->
+	<spqatlfec02>
+		<Platform OclAddr="10.164.145.95" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</spqatlfec02>
+
+
+<!--
+	Knx QA Fec1
+-->
+	<spqknxfec01>
+		<Platform OclAddr="10.164.4.95" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</spqknxfec01>
+
+
+<!--
+	Knx QA Fec2
+-->
+	<spqknxfec02>
+		<Platform OclAddr="10.164.4.95" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</spqknxfec02>
+
+
+<!--
+	Knx UAT Fec1
+-->
+	<spuknxfec01>
+		<Platform OclAddr="10.164.4.96" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</spuknxfec01>
+
+
+<!--
+	ATL Prod Fec1
+-->
+	<sppatlfec01>
+		<Platform OclAddr="10.164.145.121" OclPort="20000"/>
+		<SysLog Level="LogWarn"/>
+	</sppatlfec01>
+
+
+<!--
+	ATL Prod Fec2
+-->
+	<sppatlfec02>
+		<Platform OclAddr="10.164.145.121" OclPort="20000"/>
+		<SysLog Level="LogWarn"/>
+	</sppatlfec02>
+
+
+<!--
+	ATL Prod Fec3
+-->
+	<sppatlfec03>
+		<Platform OclAddr="10.164.145.121" OclPort="20000"/>
+		<SysLog Level="LogWarn"/>
+	</sppatlfec03>
+
+
+<!--
+	KNX Prod Fec1
+-->
+	<sppknxfec01>
+		<Platform OclAddr="10.164.4.181" OclPort="20000"/>
+		<SysLog Level="LogWarn"/>
+	</sppknxfec01>
+
+
+<!--
+	KNX Prod Fec2
+-->
+	<sppknxfec02>
+		<Platform OclAddr="10.164.4.181" OclPort="20000"/>
+		<SysLog Level="LogWarn"/>
+	</sppknxfec02>
+
+
+<!--
+	KNX Prod Fec3
+-->
+	<sppknxfec03>
+		<Platform OclAddr="10.164.4.181" OclPort="20000"/>
+		<SysLog Level="LogWarn"/>
+	</sppknxfec03>
+
+
+<!--
+	VM1
+-->
+	<centos>
+		<Platform OclAddr="10.164.67.134" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</centos>
+
+<!--
+	VM2
+-->
+	<localhost>
+		<Platform OclAddr="10.164.67.134" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</localhost>
+
+
+<!--
+	VM2
+-->
+	<fedora>
+		<Platform OclAddr="10.164.67.134" OclPort="20000"/>
+		<SysLog Level="LogDebug"/>
+	</fedora>
+
+</Nx>

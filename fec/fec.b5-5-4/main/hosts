@@ -1,0 +1,100 @@
+# Development
+# Denver
+10.164.67.132    dd1     DEN    DEV 01  sdendfec01
+10.164.67.133    dd2     DEN    DEV 02  sdendfec02
+10.164.67.134    dd3     DEN    DEV 03  sdendfec03
+# Knoxville
+10.164.244.40    kd1     KNX    DEV 01  spdknxfec01
+10.164.244.41    kd2     KNX    DEV 02  spdknxfec02
+# Largo
+10.165.3.229     f29     LARGO  DEV 01  rhlinux-5-devel
+
+# QA
+# Denver
+10.164.67.135    dq1     DEN    QA 01   sdenqfec01
+10.164.67.136    dq2     DEN    QA 02   sdenqfec02
+10.164.67.137    dq3     DEN    QA 03   sdenqfec03
+# Knoxville
+10.164.244.26    kq1     KNX    QA 01   spqknxfec01
+10.164.244.27    kq2     KNX    QA 02   spqknxfec02
+# Atlanta
+10.164.245.26    aq1     ATL    QA 01   spqatlfec01
+10.164.245.26    aq2     ATL    QA 02   spqatlfec02
+
+# UAT
+10.164.222.210   ku1     KNX    UAT 01  spuknxfec01
+
+# Netscalers
+10.164.77.244    dqs     DEN    QA      NETSCALER
+198.203.192.251  kus     KNX    UAT     NETSCALER   gatewaydemomoc.elavon.net
+10.164.229.121   kds     KNX    DEV     NETSCALER
+10.164.229.70    kqs     KNX    QA      NETSCALER
+10.164.225.70    aqs     ATL    QA      NETSCALER
+
+# Production -- ATL
+10.164.218.200   ap1     ATL  PROD 01   sppatlfec01
+10.164.218.201   ap2     ATL  PROD 02   sppatlfec02
+10.164.218.202   ap3     ATL  PROD 03   sppatlfec03
+
+# Production -- KNX
+10.164.222.200   kp1     KNX  PROD 01   sppknxfec01
+10.164.222.201   kp2     KNX  PROD 02   sppknxfec02
+10.164.222.202   kp3     KNX  PROD 03   sppknxfec03
+
+# PROD Netscalers
+198.203.192.253  kps     KNX  PROD      NETSCALER   fuseboxtrant.elavon.net
+198.203.191.116  aps     ATL  PROD      NETSCALER   fuseboxtrant.elavon.net
+
+
+# Stratus
+10.164.62.08     knx08   KNX  PROD      STRATUS
+10.164.62.21     knx21   KNX  DEV       STRATUS
+10.164.143.23    atl03   ATL  PROD      STRATUS
+10.164.143.5     atl05   ATL  PROD      STRATUS
+
+
+# DEV/QA  GBS/TPX
+198.203.192.100  KNX TPX 01  Development  spdknxtpx01
+10.164.67.133    DEN TPX 01  Development  Sdendfec02.elavontc.prv
+
+198.203.192.101  KNX TPX 01  QA  spqknxtpx01
+198.203.191.164  ATL TPX 01  QA  spqatltpx01
+10.164.67.136    DEN TPX 01  QA  Sdenqfec02.elavontc.prv
+
+198.203.192.102  KNX TPX  UAT  spuknxtpx01
+
+10.164.77.151    TIP Collector  Development  Sdendgbs01.elavontc.prv
+10.164.77.151    GBS Collector  Development  Sdendgbs01.elavontc.prv
+10.164.77.151    GBS Packagers  Development  Sdendgbs01.elavontc.prv
+
+10.164.77.152    TIP Collector  QA  Sdenqgbs01.elavontc.prv
+10.164.77.152    GBS Collector  QA  Sdenqgbs01.elavontc.prv
+10.164.77.152    GBS Packagers  QA  Sdenqgbs01.elavontc.prv
+10.164.77.152    GBS Int Upload  QA  Sdenqgbs01.elavontc.prv
+10.165.3.197     LZ Emulator  QA  aedevelopment2
+
+10.164.4.96      TIP Collector  UAT  svuknxgbs01
+10.164.4.96      GBS Collector  UAT  svuknxgbs01
+10.164.4.96      GBS Packagers  UAT  svuknxgbs01
+
+10.164.67.134    OCL  Dev  Sdendfec03.elavontc.prv
+10.164.67.137    OCL  QA  Sdenqfec03.elavontc.prv
+
+10.164.4.96      OCL  UAT  svuknxgbs01
+
+
+# Production GBS/TPX
+
+198.203.192.98   KNX TPX 01  Production  SPPKNXTPX01
+198.203.192.99   KNX TPX 02  Production  SPPKNXTPX02
+
+198.203.191.162  ATL TPX 01  Production  SPPATLTPX01
+198.203.191.163  ATL TPX 02  Production  SPPATLTPX02
+
+10.164.4.181     KNX GBS 01  Production  SPPKNXGBS01
+10.164.4.181     KNX GBS 01  Production  SPPKNXGBS01
+10.164.4.181     KNX GBS 01  Production  SPPKNXGBS01
+
+10.164.145.121   ATL GBS 01  Production  SPPATLGBS01
+10.164.145.121   ATL GBS 01  Production  SPPATLGBS01
+10.164.145.121   ATL GBS 01  Production  SPPATLGBS01
