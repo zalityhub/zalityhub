@@ -118,7 +118,9 @@ main(int argc, char *argv[])
 
   memset(&def, 0, sizeof(def));
   def.matchWord = "";
+#if _NONSTOP
   def.editFilesOnly = True;
+#endif
   def.ignoreCase = REG_ICASE;
 
   // collect options
