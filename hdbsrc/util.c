@@ -2681,19 +2681,68 @@ LaunchProgram(char *program, startup_msg_type *sup)
 
 #else
 
+Launch_t*
+LaunchParseArgs(char *args)
+{
+  static Launch_t launch;
+  memset(&launch, 0, sizeof(launch));
+
+// put the args into a stack
+
+  Stack_t *stack = StackNew((StackTuple_t)NULL, NULL);
+
+   for(char *token; (token = strtok_r(args, " ", &args)); ) 
+	    StackShiftIn(stack, (StackTuple_t)FTrim(token, " \t"));
+   
+// collect the arguments...
+
+  while(stack->depth) {
+    char *arg = (char*)StackPop(stack);		// pop arg
+
+    if( arg[0] == '<' ) {   // redirect stdin
+      arg = FTrim(arg+1, " \t");    // trim post the symbol
+      if(! strlen(arg)) {     // nothing there; use next arg...
+        if((arg = (char*)StackPop(stack)) == NULL) {
+          fprintf(stderr, "Missing file name after '<'\n");
+          return NULL;
+        }
+      }
+      launch.infile = FTrim(arg, " \t");
+    } else if( arg[0] == '>' ) {   // redirect stdout
+      arg = FTrim(arg+1, " \t");    // trim post the symbol
+      if(! strlen(arg)) {     // nothing there; use next arg...
+        if((arg = (char*)StackPop(stack)) == NULL) {
+          fprintf(stderr, "Missing file name after '>'\n");
+          return NULL;
+        }
+      }
+      launch.outfile = FTrim(arg, " \t");
+    } else {
+      if(launch.program) { 
+        fprintf(stderr, "You already told me to run '%s'; can't do another...\n", launch.program);
+        return NULL;
+      }
+      launch.program = arg;
+    }
+  }
+
+  return &launch;
+}
+
+
 int
 LaunchProgram(Launch_t *launch)
 {
 
   pid_t parent = getpid();
-  // pid_t pid = fork();
+  pid_t pid = fork();
 
-  // if(pid == 0 || (int)pid < 0 ) // parent
-    // return (int)pid;       // the parent
+  if(pid == 0 || (int)pid < 0 ) // parent
+    return (int)pid;       // the parent
 
   // prepare arg list
     int argc = 0;
-    for(int i = 0; launch->argv[i]; ++i)
+    for(int i = 0; launch->argv && launch->argv[i]; ++i)
       ++argc;    // count the args
 
     char **argv = (char**)calloc(argc + 2, sizeof(*argv));
@@ -3041,6 +3090,21 @@ StackPush(Stack_t *this, StackTuple_t tuple)
 		StackGrow(this, StackGrowSize);
 
 	this->tuples[this->depth++] = tuple;
+}
+
+
+void
+StackShiftIn(Stack_t *this, StackTuple_t tuple)
+{
+
+// need to shift the tuples up one
+
+	StackTuple_t		*tuples = calloc(this->size+1, sizeof(tuple));
+  memcpy(&tuples[1], this->tuples, (this->size*sizeof(tuple)));
+  this->tuples = tuples;
+	this->tuples[0] = tuple;
+	++this->depth;
+	++this->size;
 }
 
 

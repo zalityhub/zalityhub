@@ -37,6 +37,7 @@ typedef struct LsDef
   short optTime;
   short optSize;
   short optRev;
+  char  *optExecute;
 #if _NONSTOP
   long long optNewer;
 #else
@@ -61,7 +62,11 @@ Usage(char *msg, ...)
       fprintf(stderr, "%s\n", text);
   }
 
-  fprintf(stderr, "Usage: %s [ -fpbtsrh, -n date, -c code, -u user, -g group] *\n", Moi);
+  fprintf(stderr, "Usage: %s [ -fpbtsrhP, -x cmd, -v text, -n date", Moi);
+#if _NONSTOP
+  fprintf(stderr, ", -c code, -u user, -g group] *");
+#endif
+  fprintf(stderr, "\n");
   fprintf(stderr, "Try 'ls --help' for more information\n", Moi);
   exit(0);
 }
@@ -69,7 +74,11 @@ Usage(char *msg, ...)
 static void
 Help()
 {
-  printf("Usage: %s [ -fpbtsrhP, -v text, -n date, -c code, -u user, -g group] *\n", Moi);
+  printf("Usage: %s [ -fpbtsrhP, -x cmd, -v text, -n date", Moi);
+#if _NONSTOP
+  printf(", -c code, -u user, -g group] *");
+#endif
+  puts("");
   printf(
      "ls - Lists and generates statistics for files\n"
      "   -f      File format: display only file names\n"
@@ -82,11 +91,14 @@ Help()
      "   -r      Reverse display order\n"
      "   -h      Human format: show file size by bytes, Kb, Mb, Gb\n"
      "             and display username in place of gid,uid\n"
+     "   -x      Execute 'cmd' for every matched file\n"
      "   -v      Exclude files matching text\n"
      "   -n      Modify date newer than 'date'\n"
+#if _NONSTOP
      "   -c      File Code format: display on those files with filecode = 'code'\n"
      "   -u      User Code format: display on those files with user = 'user'\n"
      "   -g      Group Code format: display on those files with group = 'group'\n"
+#endif
      "   --help: Display this help text and exit\n"
        );
 
@@ -370,42 +382,44 @@ LsFile(LsDef *def, FileDef *file)
 
   int32_t r = INTERPRETTIMESTAMP(*((long long*)finfo->modifyTime), greg);
 
-  if(def->optBrief) {
+  if(def->optBrief) 
      // format: 114 2022-09-30 15:11 test
 
-    printf("%12.12s %4d-%02d-%02d %02d:%02d %s\n",
+    return printf("%12.12s %4d-%02d-%02d %02d:%02d %s\n",
            FormatSize(def, file),
            greg[0], greg[1], greg[2], greg[3], greg[4],
            FormatFname(def, file));
-  } else if( def->optFname || def->optPath == 1) {
-    printf("%s\n", FormatFname(def, file));
-  } else {
-    if( def->optPath == 2 ) {
-      printf("%-26.26s  %4d  %12.12s %02d%s%04d %02d:%02d %s %s\n",
-        ToUpper(FormatFname(def, file)),
-        finfo->fileCode,
-        FormatSize(def, file),
-        greg[2],  // day
-        (greg[1] <= 0 || greg[1] > 12) ? "???" : mons[greg[1]-1],
-        greg[0],
-        greg[3],
-        greg[4],
-        FormatUserid(def, file),
-        FsGetFilePerissions(finfo->security));
-    } else {
-      printf("%-8.8s      %4d     %12.12s %02d%s%04d %02d:%02d %s %s\n",
-        ToUpper(FormatFname(def, file)),
-        finfo->fileCode,
-        FormatSize(def, file),
-        greg[2],  // day
-        (greg[1] <= 0 || greg[1] > 12) ? "???" : mons[greg[1]-1],
-        greg[0],
-        greg[3],
-        greg[4],
-        FormatUserid(def, file),
-        FsGetFilePerissions(finfo->security));
-    }
-  }
+
+  if( def->optFname || def->optPath == 1) 
+    return printf("%s\n", FormatFname(def, file));
+  
+  if( def->optPath == 2 ) 
+    return printf("%-26.26s  %4d  %12.12s %02d%s%04d %02d:%02d %s %s\n",
+      ToUpper(FormatFname(def, file)),
+      finfo->fileCode,
+      FormatSize(def, file),
+      greg[2],  // day
+      (greg[1] <= 0 || greg[1] > 12) ? "???" : mons[greg[1]-1],
+      greg[0],
+      greg[3],
+      greg[4],
+      FormatUserid(def, file),
+      FsGetFilePerissions(finfo->security));
+
+  return printf("%-8.8s      %4d     %12.12s %02d%s%04d %02d:%02d %s %s\n",
+      ToUpper(FormatFname(def, file)),
+      finfo->fileCode,
+      FormatSize(def, file),
+      greg[2],  // day
+      (greg[1] <= 0 || greg[1] > 12) ? "???" : mons[greg[1]-1],
+      greg[0],
+      greg[3],
+      greg[4],
+      FormatUserid(def, file),
+      FsGetFilePerissions(finfo->security));
+
+#else
+  return printf("%s\n", file->filename);
 #endif
 
   return 0;
@@ -431,7 +445,10 @@ main(int argc, char *argv[])
   char  **tmp;
   char *date;
 #if _NONSTOP
-  GregorianTimeDef greg;
+  GregorianTimeDef  greg;
+#else
+  extern char *strptime(const char *restrict buf, const char *restrict format, struct tm *restrict tm);
+  struct tm         tm;
 #endif
   LsDef def;
 
@@ -441,7 +458,9 @@ main(int argc, char *argv[])
   ++argv;
 
   memset(&def, 0, sizeof(def));
+#if _NONSTOP
   def.optCode = -1;    // default
+#endif
 
   // collect options
   while(argc > 0) {
@@ -499,6 +518,13 @@ main(int argc, char *argv[])
         case 'r':
           ++def.optRev;
           break;
+        case 'x':
+          if(argc < 1)
+            Usage("-x command argument is missing");
+          def.optExecute = strdup(*argv);
+          --argc;
+          ++argv;
+          break;
         case 'n':
           if(argc < 1)
             Usage("-n command argument is missing");
@@ -530,11 +556,16 @@ main(int argc, char *argv[])
           def.optNewer = COMPUTETIMESTAMP(greg.u.int16, &error);
           if(error)
             Usage("-n: Invalid format in '%s': error %d\n", date, error);
+#else
+           if (strptime(date, "%Y%m%d", &tm) == NULL)
+             Usage("-n: Invalid format in '%s'\n", date);
+          def.optNewer = mktime(&tm);
 #endif
 
           --argc;
           ++argv;
           break;
+#if _NONSTOP
         case 'c':
           if(argc < 1)
             Usage("-c command argument is missing");
@@ -556,6 +587,7 @@ main(int argc, char *argv[])
           --argc;
           ++argv;
           break;
+#endif
       }
     }
   }    // while options...
@@ -596,7 +628,15 @@ main(int argc, char *argv[])
 
     for(int i = 0; i < globbuf.gl_pathc; ++i) {
       char *filename = globbuf.gl_pathv[i];
-      SvFile(filename, NULL, (void*)&def);
+
+      struct stat st;
+      int rc = stat(filename, &st);
+      if( rc ) {
+        fprintf(stderr, "Unable to stat '%s'\n", filename);
+        perror("stat");
+        continue;
+      }
+      SvFile(filename, &st, (void*)&def);
     }
 #endif
   }

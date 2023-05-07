@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <regex.h>
 #include <signal.h>
+#include <time.h>
+
 
 
 #define _NONSTOP (_TANDEM_ARCH_ != 0)
@@ -207,6 +209,9 @@ typedef struct Launch_t
   char  **argv;
 } Launch_t ;
 
+extern Launch_t* LaunchParseArgs(char *args);
+extern int LaunchProgram(Launch_t *launch);
+
 
 extern int WalkDir (char *path, FsResolveLevel rl, WalkDirCallBack callback, void *cbarg);
 
@@ -216,7 +221,6 @@ extern char *CnvIntegerToString(int value);
 extern char *CnvIpAddrToString(unsigned char *addr);
 extern char *ErrnoToString(int error);
 
-extern int LaunchProgram(Launch_t *launch);
 extern int FsParsePath(char *pname, char **components);
 extern FsFileDef* FsOpen(char *fname, char *mode, ...);
 extern int FsOn(FsFileDef *file, char *on, int(*fnc)(FsFileDef *file, char *on, ...));
@@ -377,6 +381,7 @@ static inline int StackLength(Stack_t *this) { return this->depth; }
 
 extern void StackClear(Stack_t *this);
 extern void StackPush(Stack_t *this, StackTuple_t tuple);
+extern void StackShiftIn(Stack_t *this, StackTuple_t tuple);
 extern StackTuple_t StackPop(Stack_t *this);
 extern StackTuple_t StackTop(Stack_t *this);
 extern StackTuple_t StackBottom(Stack_t *this);
