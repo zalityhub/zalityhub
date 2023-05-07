@@ -419,7 +419,28 @@ LsFile(LsDef *def, FileDef *file)
       FsGetFilePerissions(finfo->security));
 
 #else
-  return printf("%s\n", file->filename);
+  if( def->optExecute) {
+    Launch_t *launch = LaunchParseArgs(def->optExecute);
+    if(! launch ) 
+      Usage("Error while parsing arguments: '%s'", def->optExecute);
+
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
+    launch->cwd = cwd;
+    if(! launch->program) 
+      Usage("No program name given: '%s'", def->optExecute);
+
+    launch->argv = calloc(2, sizeof(*launch->argv));
+    launch->argv[0] = strdup(file->filename);
+    if( LaunchProgram(launch) < 0 ) 
+      Usage("Launch of '%s' failed", def->optExecute);
+
+    free(launch->argv[0]);
+    free(launch->argv);
+    return 0;
+  }
+
+  printf("%s\n", file->filename);
 #endif
 
   return 0;

@@ -22,9 +22,11 @@ main(int argc, char *argv[])
   while(--argc ) 
     args = SprintfCat(args, " %s", *++argv);
 
-
-
   Launch_t *launch = LaunchParseArgs(args);
+  if(! launch ) {
+    fprintf(stderr, "Error while parsing arguments\nUsage: lp program\n");
+    exit(0);
+  }
 
   char cwd[256];
   getcwd(cwd, sizeof(cwd));
