@@ -5,6 +5,8 @@ tmp
 .idea
 .env
 *.log
+*.o
+*.exe
 .DS_Store
 junk
 history.json
